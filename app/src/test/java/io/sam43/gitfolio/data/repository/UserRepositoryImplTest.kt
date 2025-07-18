@@ -1,115 +1,92 @@
+
 package io.sam43.gitfolio.data.repository
 
+import io.mockk.*
+import io.sam43.gitfolio.data.remote.ApiService
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.utils.Result
+import io.sam43.retrofitcache.RetrofitCacheManager
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
+import retrofit2.Response
 
 class UserRepositoryImplTest {
-    
-        private lateinit var userRepository: UserRepositoryImpl
-    
-        @Before
-        fun setUp() {
-                userRepository = UserRepositoryImpl()
-            }
-    
-        @Test
-        fun `when getUsers is called, should return success with empty list`() = runTest {
-                // When
-                val result = userRepository.getUsers().toList()
-        
-                // Then
-                assertEquals(1, result.size)
-                assertTrue(result[0] is Result.Success)
-                assertEquals(emptyList<User>(), (result[0] as Result.Success).data)
-            }
 
-        @Test
-        fun `when getUsers is called multiple times, should return consistent results`() = runTest {
-                // When
-                val result1 = userRepository.getUsers().toList()
-                val result2 = userRepository.getUsers().toList()
-        
-                // Then
-                assertEquals(result1.size, result2.size)
-                assertEquals(result1[0]::class, result2[0]::class)
-                if (result1[0] is Result.Success && result2[0] is Result.Success) {
-                    assertEquals((result1[0] as Result.Success).data, (result2[0] as Result.Success).data)
-                }
-            }
-    
-        @Test
-        fun `when searchUsers is called with valid query, should return success with empty list`() = runTest {
-                // Given
-                val query = "octocat"
-        
-                // When
-                val result = userRepository.searchUsers(query).toList()
-        
-                // Then
-                assertEquals(1, result.size)
-                assertTrue(result[0] is Result.Success)
-                assertEquals(emptyList<User>(), (result[0] as Result.Success).data)
-            }
-    
-        @Test
-        fun `when searchUsers is called with empty query, should return success with empty list`() = runTest {
-                // Given
-                val query = ""
-        
-                // When
-                val result = userRepository.searchUsers(query).toList()
-        
-                // Then
-                assertEquals(1, result.size)
-                assertTrue(result[0] is Result.Success)
-                assertEquals(emptyList<User>(), (result[0] as Result.Success).data)
-            }
-    
-        @Test
-        fun `when searchUsers is called with long query, should return success with empty list`() = runTest {
-                // Given
-                val query = "a".repeat(1000)
-        
-                // When
-                val result = userRepository.searchUsers(query).toList()
-        
-                // Then
-                assertEquals(1, result.size)
-                assertTrue(result[0] is Result.Success)
-                assertEquals(emptyList<User>(), (result[0] as Result.Success).data)
-            }
-    
-        @Test
-        fun `when searchUsers is called with special characters, should return success with empty list`() = runTest {
-                // Given
-                val query = "!@#$%^&*()"
-        
-                // When
-                val result = userRepository.searchUsers(query).toList()
-        
-                // Then
-                assertEquals(1, result.size)
-                assertTrue(result[0] is Result.Success)
-                assertEquals(emptyList<User>(), (result[0] as Result.Success).data)
-            }
-    
-        @Test
-        fun `when searchUsers is called with whitespace query, should return success with empty list`() = runTest {
-                // Given
-                val query = "   "
-        
-                // When
-                val result = userRepository.searchUsers(query).toList()
-        
-                // Then
-                assertEquals(1, result.size)
-                assertTrue(result[0] is Result.Success)
-                assertEquals(emptyList<User>(), (result[0] as Result.Success).data)
-            }
+    private lateinit var userRepository: UserRepositoryImpl
+    private lateinit var apiService: ApiService
+    private lateinit var cacheManager: RetrofitCacheManager
+
+    @Before
+    fun setUp() {
+        apiService = mockk()
+        cacheManager = mockk(relaxed = true)
+        userRepository = UserRepositoryImpl(apiService, cacheManager)
     }
+
+    @Test
+    fun `when getUsers is called, should return success with list of users`() = runTest {
+        // Given
+        val users = listOf(
+            User(id = 1, login = "user1", avatarUrl = "", htmlUrl = "", type = ""),
+            User(id = 2, login = "user2", avatarUrl = "", htmlUrl = "", type = "")
+        )
+        coEvery { apiService.getUsers() } returns Response.success(users)
+
+        // When
+        val result = userRepository.getUsers().toList()
+
+        // Then
+        assertEquals(1, result.size)
+        assertTrue(result[0] is Result.Success)
+        assertEquals(users, (result[0] as Result.Success).data)
+        coVerify { apiService.getUsers() }
+    }
+
+    @Test
+    fun `when searchUsers is called with valid query, should return success with list of users`() = runTest {
+        // Given
+        val query = "octocat"
+        val users = listOf(User(id = 1, login = "octocat", avatarUrl = "", htmlUrl = "", type = ""))
+        coEvery { apiService.searchUsers(query) } returns Response.success(users)
+
+        // When
+        val result = userRepository.searchUsers(query).toList()
+
+        // Then
+        assertEquals(1, result.size)
+        assertTrue(result[0] is Result.Success)
+        assertEquals(users, (result[0] as Result.Success).data)
+        coVerify { apiService.searchUsers(query) }
+    }
+
+    @Test
+    fun `when searchUsers is called with empty query, should return error`() = runTest {
+        // Given
+        val query = ""
+
+        // When
+        val result = userRepository.searchUsers(query).toList()
+
+        // Then
+        assertEquals(1, result.size)
+        assertTrue(result[0] is Result.Error)
+        assertEquals("Search query cannot be empty", (result[0] as Result.Error).exception.message)
+    }
+
+    @Test
+    fun `when API call fails, should return error`() = runTest {
+        // Given
+        coEvery { apiService.getUsers() } throws Exception("Network error")
+
+        // When
+        val result = userRepository.getUsers().toList()
+
+        // Then
+        assertEquals(1, result.size)
+        assertTrue(result[0] is Result.Error)
+        assertEquals("Network error", (result[0] as Result.Error).exception.message)
+    }
+}
