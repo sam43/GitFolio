@@ -7,6 +7,7 @@ import io.sam43.gitfolio.utils.Result
 import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
+    suspend fun getUsers(): Flow<Result<List<User>>>
     suspend fun searchUsers(query: String): Flow<Result<List<User>>>
     suspend fun getUserDetails(username: String): Flow<Result<UserDetail>>
     suspend fun getUserRepositories(username: String): Flow<Result<List<Repo>>>

@@ -9,6 +9,9 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
+    @GET("/users")
+    suspend fun getUsers(): Response<List<User>>
+
     @GET("/search/users")
     suspend fun searchUsers(@Query("q") query: String): Response<List<User>>
 

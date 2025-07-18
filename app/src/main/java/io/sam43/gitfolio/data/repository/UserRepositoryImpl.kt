@@ -12,6 +12,10 @@ import javax.inject.Inject
 class UserRepositoryImpl @Inject constructor(
     // Add your dependencies here (ApiService, UserDao, etc.)
 ) : UserRepository {
+    override suspend fun getUsers(): Flow<Result<List<User>>> {
+        // TODO: Implement actual API call
+        return flowOf(Result.Success(emptyList()))
+    }
 
     override suspend fun searchUsers(query: String): Flow<Result<List<User>>> {
         // TODO: Implement actual API call

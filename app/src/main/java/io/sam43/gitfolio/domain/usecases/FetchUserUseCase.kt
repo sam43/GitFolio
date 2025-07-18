@@ -9,7 +9,11 @@ import javax.inject.Inject
 class FetchUserUseCase @Inject constructor(
     private val userRepository: UserRepository
 ) {
-    suspend operator fun invoke(query: String): Flow<Result<List<User>>> {
-        return userRepository.searchUsers(query)
+    suspend operator fun invoke(query: String? = null): Flow<Result<List<User>>> {
+        return if (query.isNullOrBlank()) {
+            userRepository.getUsers()
+        } else {
+            userRepository.searchUsers(query)
+        }
     }
 }

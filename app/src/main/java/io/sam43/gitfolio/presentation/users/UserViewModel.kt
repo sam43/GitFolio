@@ -38,6 +38,28 @@ class UserViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    fun getAllUsers() {
+        viewModelScope.launch {
+            fetchUserUseCase().collect { result ->
+                when (result) {
+                    is Result.Loading -> {
+                        _isLoading.value = true
+                        _error.value = null
+                    }
+                    is Result.Success -> {
+                        _isLoading.value = false
+                        _users.value = result.data
+                        _error.value = null
+                    }
+                    is Result.Error -> {
+                        _isLoading.value = false
+                        _error.value = result.exception.message
+                    }
+                }
+            }
+        }
+    }
+
     fun searchUsers(query: String) {
         viewModelScope.launch {
             fetchUserUseCase(query).collect { result ->
@@ -92,7 +114,8 @@ class UserViewModel @Inject constructor(
                     }
                     is Result.Success -> {
                         _isLoading.value = false
-                        _userRepos.value = result.data
+                        // filtering out forked repositories; only show non-fork public repositories
+                        _userRepos.value = result.data.filter { !it.fork }
                         _error.value = null
                     }
                     is Result.Error -> {
