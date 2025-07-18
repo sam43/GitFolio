@@ -4,6 +4,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.domain.repository.UserRepository
+import io.sam43.gitfolio.utils.ErrorType
 import io.sam43.gitfolio.utils.Result
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -60,9 +61,8 @@ class GetUserDetailsUseCaseTest {
     fun `when getUserDetails is called with invalid username, should return error result`() = runTest {
         // Given
         val username = "nonexistentuser"
-        val exception = Exception("User not found")
         
-        coEvery { mockUserRepository.getUserDetails(username) } returns flowOf(Result.Error(exception))
+        coEvery { mockUserRepository.getUserDetails(username) } returns flowOf(Result.Error(ErrorType.ApiError(404, "User not found")))
 
         // When
         val result = getUserDetailsUseCase(username).toList()
@@ -70,7 +70,7 @@ class GetUserDetailsUseCaseTest {
         // Then
         assertEquals(1, result.size)
         assertTrue(result[0] is Result.Error)
-        assertEquals(exception, (result[0] as Result.Error).exception)
+        assertEquals(ErrorType.ApiError(404, "User not found"), (result[0] as Result.Error).errorType)
     }
 
     @Test
@@ -92,9 +92,8 @@ class GetUserDetailsUseCaseTest {
     fun `when getUserDetails is called with empty username, should return error result`() = runTest {
         // Given
         val username = ""
-        val exception = Exception("Username cannot be empty")
         
-        coEvery { mockUserRepository.getUserDetails(username) } returns flowOf(Result.Error(exception))
+        coEvery { mockUserRepository.getUserDetails(username) } returns flowOf(Result.Error(ErrorType.SearchQueryError))
 
         // When
         val result = getUserDetailsUseCase(username).toList()
@@ -102,6 +101,6 @@ class GetUserDetailsUseCaseTest {
         // Then
         assertEquals(1, result.size)
         assertTrue(result[0] is Result.Error)
-        assertEquals(exception, (result[0] as Result.Error).exception)
+        assertEquals(ErrorType.SearchQueryError, (result[0] as Result.Error).errorType)
     }
 }

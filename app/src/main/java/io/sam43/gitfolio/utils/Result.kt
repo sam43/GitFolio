@@ -2,7 +2,7 @@ package io.sam43.gitfolio.utils
 
 sealed class Result<out T> {
     data class Success<out T>(val data: T) : Result<T>()
-    data class Error(val exception: Throwable) : Result<Nothing>()
+    data class Error(val errorType: ErrorType) : Result<Nothing>()
     data object Loading : Result<Nothing>()
 }
 
@@ -11,8 +11,8 @@ inline fun <T> Result<T>.onSuccess(action: (value: T) -> Unit): Result<T> {
     return this
 }
 
-inline fun <T> Result<T>.onError(action: (exception: Throwable) -> Unit): Result<T> {
-    if (this is Result.Error) action(exception)
+inline fun <T> Result<T>.onError(action: (errorType: ErrorType) -> Unit): Result<T> {
+    if (this is Result.Error) action(errorType)
     return this
 }
 

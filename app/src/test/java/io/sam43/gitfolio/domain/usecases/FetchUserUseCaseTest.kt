@@ -4,6 +4,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.domain.repository.UserRepository
+import io.sam43.gitfolio.utils.ErrorType
 import io.sam43.gitfolio.utils.Result
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -75,9 +76,8 @@ class FetchUserUseCaseTest {
     fun `when searchUsers fails, should return error result`() = runTest {
         // Given
         val query = "invalid"
-        val exception = Exception("Network error")
         
-        coEvery { mockUserRepository.searchUsers(query) } returns flowOf(Result.Error(exception))
+        coEvery { mockUserRepository.searchUsers(query) } returns flowOf(Result.Error(ErrorType.NetworkError))
 
         // When
         val result = fetchUserUseCase(query).toList()
@@ -85,7 +85,7 @@ class FetchUserUseCaseTest {
         // Then
         assertEquals(1, result.size)
         assertTrue(result[0] is Result.Error)
-        assertEquals(exception, (result[0] as Result.Error).exception)
+        assertEquals(ErrorType.NetworkError, (result[0] as Result.Error).errorType)
     }
 
     @Test

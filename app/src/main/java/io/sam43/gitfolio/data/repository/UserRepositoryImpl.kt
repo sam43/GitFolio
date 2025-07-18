@@ -5,6 +5,9 @@ import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.domain.repository.UserRepository
+import io.sam43.gitfolio.utils.CustomException
+import io.sam43.gitfolio.utils.ErrorHandler
+import io.sam43.gitfolio.utils.ErrorType
 import io.sam43.gitfolio.utils.Result
 import io.sam43.retrofitcache.RetrofitCacheManager
 import kotlinx.coroutines.flow.Flow
@@ -21,18 +24,18 @@ class UserRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 response.body()?.let { users ->
                     emit(Result.Success(users))
-                } ?: emit(Result.Error(Exception("Empty response body")))
+                } ?: emit(Result.Error(ErrorHandler.handleError(CustomException.EmptyBodyError("Empty response body"))))
             } else {
-                emit(Result.Error(Exception("API Error: ${response.code()}")))
+                emit(Result.Error(ErrorHandler.handleError(CustomException.ApiError(response.code(), "API Error: ${response.code()}"))))
             }
         } catch (e: Exception) {
-            emit(Result.Error(e))
+            emit(Result.Error(ErrorHandler.handleError(e)))
         }
     }
 
     override suspend fun searchUsers(query: String): Flow<Result<List<User>>> = flow {
         if (query.isEmpty()) {
-            emit(Result.Error(Exception("Search query cannot be empty")))
+            emit(Result.Error(ErrorType.SearchQueryError))
             return@flow
         }
         try {
@@ -40,12 +43,12 @@ class UserRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 response.body()?.let { users ->
                     emit(Result.Success(users))
-                } ?: emit(Result.Error(Exception("Empty response body")))
+                } ?: emit(Result.Error(ErrorHandler.handleError(CustomException.EmptyBodyError("Empty response body"))))
             } else {
-                emit(Result.Error(Exception("API Error: ${response.code()}")))
+                emit(Result.Error(ErrorHandler.handleError(CustomException.ApiError(response.code(), "API Error: ${response.code()}"))))
             }
         } catch (e: Exception) {
-            emit(Result.Error(e))
+            emit(Result.Error(ErrorHandler.handleError(e)))
         }
     }
 
@@ -55,12 +58,12 @@ class UserRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 response.body()?.let { userDetail ->
                     emit(Result.Success(userDetail))
-                } ?: emit(Result.Error(Exception("Empty response body")))
+                } ?: emit(Result.Error(ErrorHandler.handleError(CustomException.EmptyBodyError("Empty response body"))))
             } else {
-                emit(Result.Error(Exception("API Error: ${response.code()}")))
+                emit(Result.Error(ErrorHandler.handleError(CustomException.ApiError(response.code(), "API Error: ${response.code()}"))))
             }
         } catch (e: Exception) {
-            emit(Result.Error(e))
+            emit(Result.Error(ErrorHandler.handleError(e)))
         }
     }
 
@@ -70,12 +73,12 @@ class UserRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 response.body()?.let { repos ->
                     emit(Result.Success(repos))
-                } ?: emit(Result.Error(Exception("Empty response body")))
+                } ?: emit(Result.Error(ErrorHandler.handleError(CustomException.EmptyBodyError("Empty response body"))))
             } else {
-                emit(Result.Error(Exception("API Error: ${response.code()}")))
+                emit(Result.Error(ErrorHandler.handleError(CustomException.ApiError(response.code(), "API Error: ${response.code()}"))))
             }
         } catch (e: Exception) {
-            emit(Result.Error(e))
+            emit(Result.Error(ErrorHandler.handleError(e)))
         }
     }
     
