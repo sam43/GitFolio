@@ -30,12 +30,7 @@ class NetworkMonitor@Inject constructor(@ApplicationContext private val applicat
         val networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 super.onAvailable(network)
-                 val capabilities = connectivityManager.getNetworkCapabilities(network)
-                 if (capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
-                     launch { send(NetworkStatus.Available) }
-                 } else {
-                     launch { send(NetworkStatus.IncapableOfInternetConnection) }
-                 }
+                launch { send(NetworkStatus.Available) }
             }
 
             override fun onLost(network: Network) {
@@ -48,8 +43,6 @@ class NetworkMonitor@Inject constructor(@ApplicationContext private val applicat
                 launch { send(NetworkStatus.Unavailable) }
             }
         }
-
-        // Initial check for network availability
         val currentNetwork = connectivityManager.activeNetwork
         if (currentNetwork == null) {
             launch { send(NetworkStatus.Unavailable) }
@@ -58,7 +51,7 @@ class NetworkMonitor@Inject constructor(@ApplicationContext private val applicat
             if (capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
                 launch { send(NetworkStatus.Available) }
             } else {
-                launch { send(NetworkStatus.Unavailable) }
+                launch { send(NetworkStatus.IncapableOfInternetConnection) }
             }
         }
 
