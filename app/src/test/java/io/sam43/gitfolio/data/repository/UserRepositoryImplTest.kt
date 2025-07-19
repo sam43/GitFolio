@@ -3,7 +3,7 @@ package io.sam43.gitfolio.data.repository
 import io.mockk.*
 import io.sam43.gitfolio.data.remote.ApiService
 import io.sam43.gitfolio.domain.model.User
-import io.sam43.gitfolio.utils.CustomException
+import io.sam43.gitfolio.utils.AppException
 import io.sam43.gitfolio.utils.ErrorType
 import io.sam43.gitfolio.utils.Result
 import io.sam43.retrofitcache.RetrofitCacheManager
@@ -80,7 +80,7 @@ class UserRepositoryImplTest {
     @Test
     fun `when API call fails, should return error`() = runTest {
         // Given
-        coEvery { apiService.getUsers() } throws CustomException.NetworkError("Network error")
+        coEvery { apiService.getUsers() } throws AppException.NetworkError("Network error")
 
         // When
         val result = userRepository.getUsers().toList()

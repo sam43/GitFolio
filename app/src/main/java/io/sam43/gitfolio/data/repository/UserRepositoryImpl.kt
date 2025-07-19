@@ -5,7 +5,7 @@ import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.domain.repository.UserRepository
-import io.sam43.gitfolio.utils.CustomException
+import io.sam43.gitfolio.utils.AppException
 import io.sam43.gitfolio.utils.ErrorHandler
 import io.sam43.gitfolio.utils.ErrorType
 import io.sam43.gitfolio.utils.Result
@@ -24,9 +24,9 @@ class UserRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 response.body()?.let { users ->
                     emit(Result.Success(users))
-                } ?: emit(Result.Error(ErrorHandler.handleError(CustomException.EmptyBodyError("Empty response body"))))
+                } ?: emit(Result.Error(ErrorHandler.handleError(AppException.EmptyBodyError())))
             } else {
-                emit(Result.Error(ErrorHandler.handleError(CustomException.ApiError(response.code(), "API Error: ${response.code()}"))))
+                emit(Result.Error(ErrorHandler.handleError(AppException.ApiError(response.code(), "API Error: ${response.code()}"))))
             }
         } catch (e: Exception) {
             emit(Result.Error(ErrorHandler.handleError(e)))
@@ -43,9 +43,9 @@ class UserRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 response.body()?.let { users ->
                     emit(Result.Success(users))
-                } ?: emit(Result.Error(ErrorHandler.handleError(CustomException.EmptyBodyError("Empty response body"))))
+                } ?: emit(Result.Error(ErrorHandler.handleError(AppException.EmptyBodyError())))
             } else {
-                emit(Result.Error(ErrorHandler.handleError(CustomException.ApiError(response.code(), "API Error: ${response.code()}"))))
+                emit(Result.Error(ErrorHandler.handleError(AppException.ApiError(response.code(), "API Error: ${response.code()}"))))
             }
         } catch (e: Exception) {
             emit(Result.Error(ErrorHandler.handleError(e)))
@@ -58,9 +58,9 @@ class UserRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 response.body()?.let { userDetail ->
                     emit(Result.Success(userDetail))
-                } ?: emit(Result.Error(ErrorHandler.handleError(CustomException.EmptyBodyError("Empty response body"))))
+                } ?: emit(Result.Error(ErrorHandler.handleError(AppException.EmptyBodyError())))
             } else {
-                emit(Result.Error(ErrorHandler.handleError(CustomException.ApiError(response.code(), "API Error: ${response.code()}"))))
+                emit(Result.Error(ErrorHandler.handleError(AppException.ApiError(response.code(), "API Error: ${response.code()}"))))
             }
         } catch (e: Exception) {
             emit(Result.Error(ErrorHandler.handleError(e)))
@@ -73,9 +73,9 @@ class UserRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 response.body()?.let { repos ->
                     emit(Result.Success(repos))
-                } ?: emit(Result.Error(ErrorHandler.handleError(CustomException.EmptyBodyError("Empty response body"))))
+                } ?: emit(Result.Error(ErrorHandler.handleError(AppException.EmptyBodyError())))
             } else {
-                emit(Result.Error(ErrorHandler.handleError(CustomException.ApiError(response.code(), "API Error: ${response.code()}"))))
+                emit(Result.Error(ErrorHandler.handleError(AppException.ApiError(response.code(), "API Error: ${response.code()}"))))
             }
         } catch (e: Exception) {
             emit(Result.Error(ErrorHandler.handleError(e)))
@@ -85,26 +85,26 @@ class UserRepositoryImpl @Inject constructor(
     /**
      * Clear all cached data. Useful for refresh operations or logout.
      */
-    suspend fun clearCache() {
+    internal fun clearCache() {
         cacheManager.clearAllCache()
     }
     
     /**
      * Clean up expired cache entries to free up memory.
      */
-    suspend fun cleanupExpiredCache() {
+    internal fun cleanupExpiredCache() {
         cacheManager.cleanupExpiredCache()
     }
     
     /**
      * Get current cache size for debugging or monitoring purposes.
      */
-    fun getCacheSize(): Int {
+    internal fun getCacheSize(): Int {
         return cacheManager.getCacheSize()
     }
     
     /**
      * Get cache statistics for monitoring.
      */
-    fun getCacheStats() = cacheManager.getCacheStats()
+    internal fun getCacheStats() = cacheManager.getCacheStats()
 }

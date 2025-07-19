@@ -11,24 +11,33 @@ import kotlinx.coroutines.flow.asSharedFlow
 
 object NetworkUtils {
 
-    private val _networkState = MutableSharedFlow<Boolean>(replay = 1)
+    private val _networkState = MutableSharedFlow<Boolean>(replay = 1) // using replay cache of last emitted value
     val networkState = _networkState.asSharedFlow()
 
     fun isNetworkAvailable(context: Context): Boolean {
-        val connectivityManager =
-            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = connectivityManager.activeNetwork ?: return false
-        val activeNetwork =
-            connectivityManager.getNetworkCapabilities(network) ?: return false
+        return try {
+            val connectivityManager =
+                context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+                    ?: return false.also { _networkState.tryEmit(false) }
+            val network =
+                connectivityManager.activeNetwork
+                    ?: return false.also { _networkState.tryEmit(false) }
+            val activeNetwork =
+                connectivityManager.getNetworkCapabilities(network)
+                    ?: return false.also { _networkState.tryEmit(false) }
 
-        val isAvailable = when {
-            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
-            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
-            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
-            else -> false
+            val isAvailable = when {
+                activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+                activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+                activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
+                else -> false
+            }
+            _networkState.tryEmit(isAvailable)
+            isAvailable
+        } catch (e: Exception) {
+            _networkState.tryEmit(false)
+            false
         }
-        _networkState.tryEmit(isAvailable)
-        return isAvailable
     }
 }
 

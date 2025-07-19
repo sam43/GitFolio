@@ -90,6 +90,7 @@ class RetrofitCacheManager private constructor(
          * @param size Maximum number of cache entries (default: 100)
          */
         fun maxCacheSize(size: Int): Builder {
+            require(size > 0) { "Cache size must be positive, got: $size" }
             this.maxCacheSize = size
             return this
         }

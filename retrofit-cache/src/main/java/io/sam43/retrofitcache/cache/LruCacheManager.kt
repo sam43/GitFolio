@@ -58,25 +58,30 @@ class LruCacheManager(private val maxSize: Int = 100) {
      * @return The cached data if available and valid, null otherwise
      */
     fun get(key: String): String? {
-        return lock.read {
-            val entry = cache[key]
-            if (entry != null && !entry.isExpired()) {
-                // Update access order
-                lock.write {
-                    accessOrder[key] = System.currentTimeMillis()
-                }
-                entry.data
-            } else {
-                // Remove expired entry
-                if (entry != null) {
-                    lock.write {
-                        cache.remove(key)
-                        accessOrder.remove(key)
-                    }
-                }
-                null
+        var entry: CacheEntry? = null
+        var expired = false
+
+        // Acquire read lock to get entry and check expiration
+        lock.read {
+            entry = cache[key]
+            expired = entry?.isExpired() ?: false
+        }
+
+        if (entry != null && !expired) {
+            // Acquire write lock to update access order
+            lock.write {
+                accessOrder[key] = System.currentTimeMillis()
+            }
+            return entry!!.data
+        } else if (expired) {
+            // Acquire write lock to remove expired entry
+            lock.write {
+                cache.remove(key)
+                accessOrder.remove(key)
             }
         }
+
+        return null
     }
     
     /**

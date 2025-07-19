@@ -101,8 +101,16 @@ class CacheInterceptor(
     private fun generateCacheKey(request: okhttp3.Request): String {
         val url = request.url.toString()
         val method = request.method
-        val keyString = "${method}_$url"
-        
+        var keyString = "${method}_$url"
+
+        // Include request body hash for non-GET requests
+        if (method != "GET" && request.body != null) {
+            // Add request body to key calculation
+            val buffer = okio.Buffer()
+            request.body?.writeTo(buffer)
+            keyString += "_${buffer.readByteString().md5().hex()}"
+        }
+
         // Use MD5 hash to create a shorter, consistent key
         return try {
             val md = MessageDigest.getInstance("MD5")
@@ -133,13 +141,8 @@ class CacheInterceptor(
             responseBuilder.addHeader(CACHE_HIT_HEADER, "HIT")
             
             // Add cache age and TTL headers for debugging
-            val cacheKey = generateCacheKey(request)
-            val entry = cacheManager.get(cacheKey)
-            if (entry != null) {
-                // Note: This is a simplified approach. In a real implementation,
-                // you might want to store timestamp information separately.
-                responseBuilder.addHeader(CACHE_TTL_HEADER, cacheControl.maxAge.toString())
-            }
+            responseBuilder.addHeader(CACHE_TTL_HEADER, cacheControl.maxAge.toString())
+
         }
         
         return responseBuilder.build()
