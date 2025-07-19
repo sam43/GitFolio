@@ -15,19 +15,13 @@ import javax.inject.Singleton
 object DomainModule {
     @Provides
     @Singleton
-    fun provideFetchUserUseCase(repository: UserRepository): FetchUserUseCase {
-        return FetchUserUseCase(repository)
-    }
+    fun provideFetchUserUseCase(repository: UserRepository): FetchUserUseCase = FetchUserUseCase(repository)
 
     @Provides
     @Singleton
-    fun provideGetUserDetailsUseCase(repository: UserRepository): GetUserDetailsUseCase {
-        return GetUserDetailsUseCase(repository)
-    }
+    fun provideGetUserDetailsUseCase(repository: UserRepository): GetUserDetailsUseCase = GetUserDetailsUseCase(repository)
 
     @Provides
     @Singleton
-    fun provideGetUserRepositoriesUseCase(repository: UserRepository): GetUserRepositoriesUseCase {
-        return GetUserRepositoriesUseCase(repository)
-    }
+    fun provideGetUserRepositoriesUseCase(repository: UserRepository): GetUserRepositoriesUseCase = GetUserRepositoriesUseCase(repository)
 }
