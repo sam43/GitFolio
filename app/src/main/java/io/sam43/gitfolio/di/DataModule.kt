@@ -5,6 +5,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.sam43.gitfolio.data.remote.ApiService
+import io.sam43.gitfolio.data.repository.UserRepositoryImpl
+import io.sam43.gitfolio.domain.repository.UserRepository
 import io.sam43.retrofitcache.RetrofitCacheManager
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -63,6 +65,12 @@ object DataModule {
     @Singleton
     fun provideApiService(retrofit: Retrofit): ApiService {
         return retrofit.create(ApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(userRepositoryImpl: UserRepositoryImpl): UserRepository {
+        return userRepositoryImpl
     }
 }
 
