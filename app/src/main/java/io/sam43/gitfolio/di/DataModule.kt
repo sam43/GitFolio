@@ -1,8 +1,11 @@
 package io.sam43.gitfolio.di
 
+import android.app.Application
+import android.content.Context
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.sam43.gitfolio.data.remote.ApiService
 import io.sam43.gitfolio.data.repository.UserRepositoryImpl
@@ -21,11 +24,11 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideRetrofitCacheManager(): RetrofitCacheManager {
+    fun provideRetrofitCacheManager(@ApplicationContext context: Context): RetrofitCacheManager {
         return RetrofitCacheManager.builder()
             .maxCacheSize(200)           // Cache up to 200 entries
             .enableDebugHeaders(true)    // Add debug headers for development
-            .build()
+            .build(context)
     }
 
     @Provides

@@ -1,6 +1,7 @@
 package io.sam43.retrofitcache
 
-import io.sam43.retrofitcache.cache.LruCacheManager
+import android.content.Context
+import io.sam43.retrofitcache.cache.PersistentLruCacheManager
 import io.sam43.retrofitcache.interceptor.CacheInterceptor
 
 /**
@@ -59,7 +60,7 @@ class RetrofitCacheManager private constructor(
     /**
      * Get cache statistics for monitoring and debugging.
      */
-    fun getCacheStats(): LruCacheManager.CacheStats {
+    fun getCacheStats(): PersistentLruCacheManager.CacheStats {
         return cacheInterceptor.getCacheStats()
     }
     
@@ -108,9 +109,9 @@ class RetrofitCacheManager private constructor(
         /**
          * Build the RetrofitCacheManager instance.
          */
-        fun build(): RetrofitCacheManager {
-            val lruCacheManager = LruCacheManager(maxCacheSize)
-            val cacheInterceptor = CacheInterceptor(lruCacheManager, enableDebugHeaders)
+        fun build(context: Context): RetrofitCacheManager {
+            val persistentCacheManager = PersistentLruCacheManager(maxCacheSize, context)
+            val cacheInterceptor = CacheInterceptor(persistentCacheManager, enableDebugHeaders)
             return RetrofitCacheManager(cacheInterceptor)
         }
     }
@@ -124,6 +125,6 @@ class RetrofitCacheManager private constructor(
         /**
          * Create a default RetrofitCacheManager instance.
          */
-        fun createDefault(): RetrofitCacheManager = builder().build()
+        fun createDefault(context: Context): RetrofitCacheManager = builder().build(context)
     }
 }

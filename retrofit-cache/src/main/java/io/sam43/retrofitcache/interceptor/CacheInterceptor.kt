@@ -1,7 +1,7 @@
 package io.sam43.retrofitcache.interceptor
 
 import io.sam43.retrofitcache.annotation.CacheControl
-import io.sam43.retrofitcache.cache.LruCacheManager
+import io.sam43.retrofitcache.cache.PersistentLruCacheManager
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
@@ -38,7 +38,7 @@ import java.security.MessageDigest
  * @param enableDebugHeaders Whether to add debug headers to responses (default: true)
  */
 class CacheInterceptor(
-    private val cacheManager: LruCacheManager = LruCacheManager(),
+    private val cacheManager: PersistentLruCacheManager,
     private val enableDebugHeaders: Boolean = true
 ) : Interceptor {
     
@@ -62,11 +62,21 @@ class CacheInterceptor(
             // Try to get from cache first
             val cachedResponse = cacheManager.get(cacheKey)
             if (cachedResponse != null) {
-                return createCachedResponse(request, cachedResponse, cacheControl)
+                return createCachedResponse(request, cachedResponse, cacheControl, isFromCache = true)
             }
             
             // If not in cache, proceed with network request
-            val response = chain.proceed(request)
+            val response = try {
+                chain.proceed(request)
+            } catch (e: Exception) {
+                // Network failed, try to get expired cache data as fallback
+                val expiredCachedResponse = cacheManager.get(cacheKey, allowExpired = true)
+                if (expiredCachedResponse != null) {
+                    return createCachedResponse(request, expiredCachedResponse, cacheControl, isFromCache = true, isExpired = true)
+                } else {
+                    throw e // Re-throw the network exception if no cache fallback is available
+                }
+            }
             
             // Cache successful responses
             if (response.isSuccessful && response.body != null) {
@@ -128,7 +138,9 @@ class CacheInterceptor(
     private fun createCachedResponse(
         request: okhttp3.Request, 
         cachedData: String, 
-        cacheControl: CacheControl
+        cacheControl: CacheControl,
+        isFromCache: Boolean = false,
+        isExpired: Boolean = false
     ): Response {
         val responseBuilder = Response.Builder()
             .request(request)
@@ -138,11 +150,15 @@ class CacheInterceptor(
             .body(cachedData.toResponseBody("application/json".toMediaType()))
         
         if (enableDebugHeaders) {
-            responseBuilder.addHeader(CACHE_HIT_HEADER, "HIT")
+            val cacheStatus = when {
+                isExpired -> "HIT-EXPIRED"
+                isFromCache -> "HIT"
+                else -> "MISS"
+            }
+            responseBuilder.addHeader(CACHE_HIT_HEADER, cacheStatus)
             
             // Add cache age and TTL headers for debugging
             responseBuilder.addHeader(CACHE_TTL_HEADER, cacheControl.maxAge.toString())
-
         }
         
         return responseBuilder.build()
@@ -172,7 +188,7 @@ class CacheInterceptor(
     /**
      * Get cache statistics.
      */
-    fun getCacheStats(): LruCacheManager.CacheStats = cacheManager.getStats()
+    fun getCacheStats(): PersistentLruCacheManager.CacheStats = cacheManager.getStats()
     
     /**
      * Check if a specific request would be cached.

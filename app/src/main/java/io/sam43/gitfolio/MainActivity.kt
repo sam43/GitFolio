@@ -30,7 +30,6 @@ class MainActivity : ComponentActivity() {
                     is NetworkUiEvent.ShowToast -> {
                         Toast.makeText(this@MainActivity, event.message, Toast.LENGTH_LONG).show()
                     }
-                    else -> { /* Do nothing */}
                 }
             }
         }

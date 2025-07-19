@@ -1,35 +1,57 @@
 package io.sam43.retrofitcache.cache
 
+import android.content.Context
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.io.File
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
 
 /**
- * Thread-safe LRU Cache implementation for caching network responses.
+ * Thread-safe LRU Cache implementation with persistent storage for caching network responses.
  * 
  * This cache manager implements the Least Recently Used (LRU) algorithm to manage
- * cached data efficiently. It automatically removes the least recently used items
- * when the cache reaches its maximum capacity.
+ * cached data efficiently and persists data to disk for offline access.
  * 
  * Features:
  * - Thread-safe operations using ConcurrentHashMap and ReentrantReadWriteLock
+ * - Persistent disk storage for offline access
  * - Automatic expiration based on maxAge
  * - LRU eviction policy
  * - Configurable maximum cache size
  * - Cleanup methods for expired entries
  * 
  * @param maxSize Maximum number of entries to keep in cache (default: 100)
+ * @param context Android context for file operations
  */
-class LruCacheManager(private val maxSize: Int = 100) {
+class PersistentLruCacheManager(
+    private val maxSize: Int = 100,
+    private val context: Context
+) {
     
     private val cache = ConcurrentHashMap<String, CacheEntry>()
     private val accessOrder = LinkedHashMap<String, Long>()
     private val lock = ReentrantReadWriteLock()
+    private val cacheDir = File(context.cacheDir, "retrofit_cache")
+    private val json = Json { ignoreUnknownKeys = true }
+    
+    init {
+        // Ensure cache directory exists
+        if (!cacheDir.exists()) {
+            cacheDir.mkdirs()
+        }
+        // Load existing cache from disk
+        loadCacheFromDisk()
+    }
     
     /**
-     * Represents a cached entry with its data, timestamp, and expiration time.
+     * Serializable cache entry for disk persistence.
      */
+    @Serializable
     data class CacheEntry(
         val data: String,
         val timestamp: Long,
@@ -52,12 +74,66 @@ class LruCacheManager(private val maxSize: Int = 100) {
     }
     
     /**
+     * Container for cache data and access order for disk persistence.
+     */
+    @Serializable
+    private data class CacheContainer(
+        val cacheEntries: Map<String, CacheEntry>,
+        val accessOrder: Map<String, Long>
+    )
+    
+    /**
+     * Load cache from disk on initialization.
+     */
+    private fun loadCacheFromDisk() {
+        lock.write {
+            try {
+                val cacheFile = File(cacheDir, "cache_data.json")
+                if (cacheFile.exists()) {
+                    val cacheData = cacheFile.readText()
+                    val container = json.decodeFromString<CacheContainer>(cacheData)
+                    
+                    // Filter out expired entries during load
+                    val validEntries = container.cacheEntries.filter { !it.value.isExpired() }
+                    cache.clear()
+                    cache.putAll(validEntries)
+                    
+                    accessOrder.clear()
+                    accessOrder.putAll(container.accessOrder.filter { it.key in validEntries.keys })
+                }
+            } catch (e: Exception) {
+                // If loading fails, start with empty cache
+                cache.clear()
+                accessOrder.clear()
+            }
+        }
+    }
+    
+    /**
+     * Save cache to disk.
+     */
+    private fun saveCacheToDisk() {
+        try {
+            val container = CacheContainer(
+                cacheEntries = cache.toMap(),
+                accessOrder = accessOrder.toMap()
+            )
+            val cacheFile = File(cacheDir, "cache_data.json")
+            cacheFile.writeText(json.encodeToString(container))
+        } catch (e: IOException) {
+            // Silently handle file write errors
+        }
+    }
+    
+    /**
      * Get cached data if it exists and is not expired.
+     * Falls back to expired cache if allowExpired is true (for offline scenarios).
      * 
      * @param key The cache key
-     * @return The cached data if available and valid, null otherwise
+     * @param allowExpired Whether to return expired cache entries (useful for offline mode)
+     * @return The cached data if available, null otherwise
      */
-    fun get(key: String): String? {
+    fun get(key: String, allowExpired: Boolean = false): String? {
         var entry: CacheEntry? = null
         var expired = false
 
@@ -67,17 +143,18 @@ class LruCacheManager(private val maxSize: Int = 100) {
             expired = entry?.isExpired() ?: false
         }
 
-        if (entry != null && !expired) {
+        if (entry != null && (!expired || allowExpired)) {
             // Acquire write lock to update access order
             lock.write {
                 accessOrder[key] = System.currentTimeMillis()
             }
             return entry!!.data
-        } else if (expired) {
+        } else if (expired && !allowExpired) {
             // Acquire write lock to remove expired entry
             lock.write {
                 cache.remove(key)
                 accessOrder.remove(key)
+                saveCacheToDisk()
             }
         }
 
@@ -107,6 +184,9 @@ class LruCacheManager(private val maxSize: Int = 100) {
             val entry = CacheEntry(data, System.currentTimeMillis(), maxAge)
             cache[key] = entry
             accessOrder[key] = System.currentTimeMillis()
+            
+            // Save to disk
+            saveCacheToDisk()
         }
     }
     
@@ -114,12 +194,13 @@ class LruCacheManager(private val maxSize: Int = 100) {
      * Check if a key exists in cache and is not expired.
      * 
      * @param key The cache key
+     * @param allowExpired Whether to consider expired entries as existing
      * @return true if key exists and is valid, false otherwise
      */
-    fun contains(key: String): Boolean {
+    fun contains(key: String, allowExpired: Boolean = false): Boolean {
         return lock.read {
             val entry = cache[key]
-            entry != null && !entry.isExpired()
+            entry != null && (!entry.isExpired() || allowExpired)
         }
     }
     
@@ -133,6 +214,9 @@ class LruCacheManager(private val maxSize: Int = 100) {
         return lock.write {
             val removed = cache.remove(key) != null
             accessOrder.remove(key)
+            if (removed) {
+                saveCacheToDisk()
+            }
             removed
         }
     }
@@ -144,6 +228,7 @@ class LruCacheManager(private val maxSize: Int = 100) {
         lock.write {
             cache.clear()
             accessOrder.clear()
+            saveCacheToDisk()
         }
     }
     
@@ -161,6 +246,10 @@ class LruCacheManager(private val maxSize: Int = 100) {
             expiredKeys.forEach { key ->
                 cache.remove(key)
                 accessOrder.remove(key)
+            }
+            
+            if (expiredKeys.isNotEmpty()) {
+                saveCacheToDisk()
             }
             
             expiredKeys.size

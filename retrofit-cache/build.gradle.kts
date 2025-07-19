@@ -1,6 +1,7 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.kotlin.serialization)
     id("maven-publish")
 }
 
@@ -45,6 +46,9 @@ dependencies {
     
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    
+    // Kotlinx Serialization
+    implementation(libs.kotlinx.serialization.json)
     
     // Test dependencies (will be moving to version catalog soon)
     testImplementation("junit:junit:4.13.2")
