@@ -9,6 +9,8 @@ import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.usecases.FetchUserUseCase
 import io.sam43.gitfolio.domain.usecases.GetUserDetailsUseCase
 import io.sam43.gitfolio.domain.usecases.GetUserRepositoriesUseCase
+import io.sam43.gitfolio.utils.ErrorType
+import io.sam43.gitfolio.utils.ErrorHandler
 import io.sam43.gitfolio.utils.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -124,16 +126,15 @@ class UserViewModelTest {
     @Test
     fun `getAllUsers with error should update error state`() = runTest {
         // Given
-        val errorMessage = "Network error"
-        val exception = RuntimeException(errorMessage)
-        coEvery { fetchUserUseCase() } returns flowOf(Result.Error(exception))
+        val errorType = ErrorType.NetworkError
+        coEvery { fetchUserUseCase() } returns flowOf(Result.Error(errorType))
         
         // When
         userViewModel.getAllUsers()
         
         // Then
         assertEquals(false, userViewModel.isLoading.value)
-        assertEquals(errorMessage, userViewModel.error.value)
+        assertEquals(ErrorHandler.getErrorMessage(errorType), userViewModel.error.value)
     }
 
     @Test
@@ -170,16 +171,15 @@ class UserViewModelTest {
     fun `searchUsers with error should update error state`() = runTest {
         // Given
         val query = "octocat"
-        val errorMessage = "Network error"
-        val exception = RuntimeException(errorMessage)
-        coEvery { fetchUserUseCase(query) } returns flowOf(Result.Error(exception))
+        val errorType = ErrorType.NetworkError
+        coEvery { fetchUserUseCase(query) } returns flowOf(Result.Error(errorType))
         
         // When
         userViewModel.searchUsers(query)
         
         // Then
         assertEquals(false, userViewModel.isLoading.value)
-        assertEquals(errorMessage, userViewModel.error.value)
+        assertEquals(ErrorHandler.getErrorMessage(errorType), userViewModel.error.value)
     }
     
     @Test
@@ -228,16 +228,15 @@ class UserViewModelTest {
     fun `getUserDetails with error should update error state`() = runTest {
         // Given
         val username = "octocat"
-        val errorMessage = "User not found"
-        val exception = RuntimeException(errorMessage)
-        coEvery { getUserDetailsUseCase(username) } returns flowOf(Result.Error(exception))
+        val errorType = ErrorType.ApiError(404, "User not found")
+        coEvery { getUserDetailsUseCase(username) } returns flowOf(Result.Error(errorType))
         
         // When
         userViewModel.getUserDetails(username)
         
         // Then
         assertEquals(false, userViewModel.isLoading.value)
-        assertEquals(errorMessage, userViewModel.error.value)
+        assertEquals(ErrorHandler.getErrorMessage(errorType), userViewModel.error.value)
     }
     
     @Test
@@ -274,16 +273,15 @@ class UserViewModelTest {
     fun `getUserRepos with error should update error state`() = runTest {
         // Given
         val username = "octocat"
-        val errorMessage = "Failed to fetch repositories"
-        val exception = RuntimeException(errorMessage)
-        coEvery { getUserRepositoriesUseCase(username) } returns flowOf(Result.Error(exception))
+        val errorType = ErrorType.NetworkError
+        coEvery { getUserRepositoriesUseCase(username) } returns flowOf(Result.Error(errorType))
         
         // When
         userViewModel.getUserRepos(username)
         
         // Then
         assertEquals(false, userViewModel.isLoading.value)
-        assertEquals(errorMessage, userViewModel.error.value)
+        assertEquals(ErrorHandler.getErrorMessage(errorType), userViewModel.error.value)
     }
     
     @Test
@@ -295,4 +293,4 @@ class UserViewModelTest {
         assertEquals(false, userViewModel.isLoading.value)
         assertEquals(null, userViewModel.error.value)
     }
-} 
+}

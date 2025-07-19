@@ -4,6 +4,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.repository.UserRepository
+import io.sam43.gitfolio.utils.ErrorType
 import io.sam43.gitfolio.utils.Result
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -60,9 +61,8 @@ class GetUserRepositoriesUseCaseTest {
     fun `when getUserRepositories fails, should return error result`() = runTest {
         // Given
         val username = "invalid"
-        val exception = Exception("Network error")
         
-        coEvery { mockUserRepository.getUserRepositories(username) } returns flowOf(Result.Error(exception))
+        coEvery { mockUserRepository.getUserRepositories(username) } returns flowOf(Result.Error(ErrorType.NetworkError))
 
         // When
         val result = getUserRepositoriesUseCase(username).toList()
@@ -70,7 +70,7 @@ class GetUserRepositoriesUseCaseTest {
         // Then
         assertEquals(1, result.size)
         assertTrue(result[0] is Result.Error)
-        assertEquals(exception, (result[0] as Result.Error).exception)
+        assertEquals(ErrorType.NetworkError, (result[0] as Result.Error).errorType)
     }
 
     @Test

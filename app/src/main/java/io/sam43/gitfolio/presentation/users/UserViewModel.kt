@@ -9,6 +9,7 @@ import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.usecases.FetchUserUseCase
 import io.sam43.gitfolio.domain.usecases.GetUserDetailsUseCase
 import io.sam43.gitfolio.domain.usecases.GetUserRepositoriesUseCase
+import io.sam43.gitfolio.utils.ErrorHandler
 import io.sam43.gitfolio.utils.Result
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,7 +54,7 @@ class UserViewModel @Inject constructor(
                     }
                     is Result.Error -> {
                         _isLoading.value = false
-                        _error.value = result.exception.message
+                        _error.value = ErrorHandler.getErrorMessage(result.errorType)
                     }
                 }
             }
@@ -75,7 +76,7 @@ class UserViewModel @Inject constructor(
                     }
                     is Result.Error -> {
                         _isLoading.value = false
-                        _error.value = result.exception.message
+                        _error.value = ErrorHandler.getErrorMessage(result.errorType)
                     }
                 }
             }
@@ -97,7 +98,7 @@ class UserViewModel @Inject constructor(
                     }
                     is Result.Error -> {
                         _isLoading.value = false
-                        _error.value = result.exception.message
+                        _error.value = ErrorHandler.getErrorMessage(result.errorType)
                     }
                 }
             }
@@ -120,7 +121,7 @@ class UserViewModel @Inject constructor(
                     }
                     is Result.Error -> {
                         _isLoading.value = false
-                        _error.value = result.exception.message
+                        _error.value = ErrorHandler.getErrorMessage(result.errorType)
                     }
                 }
             }
