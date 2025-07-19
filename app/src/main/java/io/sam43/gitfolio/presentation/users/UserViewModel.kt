@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@Deprecated("This class is deprecated. I will be implementing separate VM for each screen. Unit testing is easier with it though.")
 @HiltViewModel
 class UserViewModel @Inject constructor(
     private val fetchUserUseCase: FetchUserUseCase,

@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.google.material)
+    implementation(libs.androidx.navigation.compose)
     
     // Networking
     implementation(libs.retrofit)
@@ -83,14 +84,13 @@ dependencies {
     
     // DI
     implementation(libs.hilt.android)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.junit.jupiter)
+    implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
     // Test
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
