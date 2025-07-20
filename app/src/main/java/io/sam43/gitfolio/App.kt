@@ -1,7 +1,6 @@
 package io.sam43.gitfolio
 
 import android.app.Application
-import android.util.Log
 import dagger.hilt.android.HiltAndroidApp
 import io.sam43.gitfolio.presentation.common.NetworkUiEvent
 import io.sam43.gitfolio.utils.NetworkMonitor
@@ -30,21 +29,20 @@ class App : Application() {
     }
 
     private fun startBroadcastingNetworkState() {
-        if (!::networkMonitor.isInitialized) {
-            Log.e("App", "NetworkMonitor not initialized in App class.")
-            return
-        }
-
+        if (!::networkMonitor.isInitialized) return
+        var isInitialLoad = true
         networkMonitor.networkStatus
             .onEach { status ->
                 val message = when (status) {
-                    is NetworkStatus.Available -> "Internet Connected"
-                    is NetworkStatus.Unavailable -> "Internet Disconnected"
+                    is NetworkStatus.Available -> "Internet Connection was reestablished successfully"
+                    is NetworkStatus.Unavailable -> "Disconnected from Internet! Please check your connection."
                     is NetworkStatus.IncapableOfInternetConnection -> "Unable to connect to internet."
                 }
-                Log.d("App", "Network Status Changed: $message")
-                // Emit an event instead of showing a Toast directly
-                _networkUiEvents.emit(NetworkUiEvent.ShowToast(message))
+                // Only emit toast events after initial load
+                if (!isInitialLoad) {
+                    _networkUiEvents.emit(NetworkUiEvent.ShowToast(message))
+                }
+                isInitialLoad = false
             }
             .launchIn(applicationScope)
     }
