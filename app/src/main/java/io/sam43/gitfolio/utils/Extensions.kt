@@ -1,6 +1,10 @@
 package io.sam43.gitfolio.utils
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
+import android.os.Build
 
 @SuppressLint("DefaultLocale")
 fun Int.toFormattedCountString(includeDecimalForThousands: Boolean = false): String =
@@ -20,3 +24,19 @@ fun Int.toFormattedCountString(includeDecimalForThousands: Boolean = false): Str
             String.format("%.1fB", this / 1_000_000_000.0).replace(".0B", "B")
         }
     }
+
+// Get app version without BuildConfig
+
+fun Context.appVersionName(): String {
+    return try {
+        val packageInfo: PackageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+        } else {
+            packageManager.getPackageInfo(packageName, 0)
+        }
+        packageInfo.versionName ?: "---"
+    } catch (e: PackageManager.NameNotFoundException) {
+        e.printStackTrace()
+        "---"
+    }
+}

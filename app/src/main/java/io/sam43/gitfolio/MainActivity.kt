@@ -230,7 +230,7 @@ fun AppMain(modifier: Modifier, navController: NavHostController, themeViewModel
                 )
             }
             composable(SETTINGS_SCREEN) {
-                SettingsScreen(navController, themeViewModel)
+                SettingsScreen(themeViewModel)
             }
         }
     }
