@@ -6,7 +6,6 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -62,6 +61,8 @@ import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
 import io.sam43.gitfolio.presentation.viewmodels.UserProfileDetailsViewModel
 import io.sam43.gitfolio.utils.toFormattedCountString
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun GithubProfileScreen(
@@ -77,33 +78,42 @@ fun GithubProfileScreen(
     }
     val state by viewModel.state.collectAsState()
 
-    if (state.error != null) {
-        ErrorScreen(errorText = state.error ?: "")
-    } else {
-        // Use the initial data for the initial composition
-        val userDetail = state.user ?: UserDetail(
-            login = displayName,
-            avatarUrl = avatarUrl,
-            name = displayName,
-            followers = 0,
-            following = 0,
-            id = 0,
-            htmlUrl = "",
-            company = "",
-            blog = "",
-            location = "",
-            email = "",
-            publicRepos = 0,
-            bio = ""
-        )
+    val displayUserForTransition = remember(state.user, avatarUrl, displayName, username) {
+        if (state.user != null) {
+            state.user
+        } else {
+            UserDetail(
+                login = username,
+                id = 0,
+                avatarUrl = URLDecoder.decode(avatarUrl, StandardCharsets.UTF_8.name()),
+                name = URLDecoder.decode(displayName, StandardCharsets.UTF_8.name()),
+                htmlUrl = "",
+                company = null,
+                blog = null,
+                location = null,
+                email = null,
+                bio = null,
+                publicRepos = 0,
+                followers = 0,
+                following = 0
+            )
+        }
+    }
 
+    if (state.error != null && state.user == null) { // Show error only if full load fails
+        ErrorScreen(errorText = state.error ?: "")
+    } else if (state.isLoading && displayUserForTransition == null) {
+        CenteredCircularProgressIndicator()
+    } else if (displayUserForTransition != null) {
         UserProfileView(
-            user = userDetail,
+            user = displayUserForTransition,
             repositories = state.repositories,
-            isLoading = state.isLoading,
+            isLoading = state.isLoading && state.user == null,
             sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope
+            animatedVisibilityScope = animatedVisibilityScope // Pass this down
         )
+    } else {
+        CenteredCircularProgressIndicator()
     }
 }
 
@@ -116,6 +126,7 @@ fun UserProfileView(
     animatedVisibilityScope: AnimatedVisibilityScope
 ) {
     val headerHeight = 280.dp
+    val toolbarHeight = 64.dp
 
     val headerHeightPx = with(LocalDensity.current) { headerHeight.toPx() }
 
@@ -167,6 +178,7 @@ fun UserProfileView(
 
             CollapsingTopBar(
                 user = user,
+                toolbarHeight = toolbarHeight,
                 headerHeight = headerHeight,
                 offset = headerOffsetHeightPx.floatValue
             )
@@ -211,26 +223,25 @@ fun CollapsingToolbar(
                     .clip(RectangleShape)
                     .sharedElement(
                         sharedContentState = rememberSharedContentState(key = "user-avatar-${user.login}"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        boundsTransform = { _, _ -> tween(300) }
+                        animatedVisibilityScope = animatedVisibilityScope
                     )
                     .graphicsLayer {
                         translationY = offset * 0.4f
                     }
             )
             Spacer(Modifier.height(16.dp))
-            Text(
-                user.name ?: "",
+            Text(user.name ?: "---",
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .sharedElement(
                         sharedContentState = rememberSharedContentState(key = "username-${user.login}"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        boundsTransform = { _, _ -> tween(300) }
+                        animatedVisibilityScope = animatedVisibilityScope
                     )
-                    .graphicsLayer { alpha = 1f - collapseFraction * 2 }
+                    .graphicsLayer {
+                        alpha = 1f - collapseFraction * 2
+                    }
             )
             Text(
                 "@${user.login}",
@@ -251,7 +262,7 @@ fun CollapsingToolbar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CollapsingTopBar(user: UserDetail, headerHeight: Dp, offset: Float) {
+fun CollapsingTopBar(user: UserDetail, toolbarHeight: Dp, headerHeight: Dp, offset: Float) {
     val headerHeightPx = with(LocalDensity.current) { headerHeight.toPx() }
     val collapseThreshold = headerHeightPx * 0.7f
 

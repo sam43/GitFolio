@@ -53,18 +53,18 @@ fun UserListScreen(
     val state by viewModel.state.collectAsState()
 
     when {
-        state.isLoading && state.error.isNullOrEmpty() -> CenteredCircularProgressIndicator()
-        !state.error.isNullOrEmpty() -> ErrorScreen(errorText = state.error ?: "")
-        else ->
-            UserList(
+        state.isLoading && state.users.isEmpty() -> CenteredCircularProgressIndicator()
+        state.error != null -> ErrorScreen(errorText = state.error ?: "")
+        else -> UserList(
             userListState = state,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope
         ) { user ->
-            val encodedAvatarUrl = URLEncoder.encode(user.avatarUrl, StandardCharsets.UTF_8.toString())
+            val encodedAvatarUrl = URLEncoder.encode(user.avatarUrl, StandardCharsets.UTF_8.name())
+            val encodedDisplayName = URLEncoder.encode(user.login, StandardCharsets.UTF_8.name()) // Handle null name
             AppNavigation.navigateTo(
                 navController = navController,
-                route = "${USER_PROFILE_SCREEN}/${user.login}?avatarUrl=${encodedAvatarUrl}&displayName=${user.login}"
+                route = "${USER_PROFILE_SCREEN}/${user.login}?avatarUrl=$encodedAvatarUrl&displayName=$encodedDisplayName"
             )
         }
     }
@@ -112,10 +112,10 @@ fun UserListItem(
                 modifier = Modifier
                     .size(56.dp)
                     .clip(RectangleShape)
+                    .clickable(onClick = onClick)
                     .sharedElement(
                         sharedContentState = rememberSharedContentState(key = "user-avatar-${user.login}"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        boundsTransform = { _, _ -> tween(300) }
+                        animatedVisibilityScope = animatedVisibilityScope
                     )
             )
             Spacer(Modifier.width(16.dp))
@@ -124,10 +124,10 @@ fun UserListItem(
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
+                    .clickable(onClick = onClick)
                     .sharedElement(
                         sharedContentState = rememberSharedContentState(key = "username-${user.login}"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        boundsTransform = { _, _ -> tween(300) }
+                        animatedVisibilityScope = animatedVisibilityScope
                     )
             )
         }

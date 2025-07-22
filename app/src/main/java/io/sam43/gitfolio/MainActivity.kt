@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +41,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -61,6 +64,7 @@ import io.sam43.gitfolio.presentation.screens.GithubProfileScreen
 import io.sam43.gitfolio.presentation.screens.SearchBox
 import io.sam43.gitfolio.presentation.screens.SettingsScreen
 import io.sam43.gitfolio.presentation.screens.UserListScreen
+import io.sam43.gitfolio.presentation.viewmodels.ThemeViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -70,6 +74,7 @@ class MainActivity : ComponentActivity() {
     private val appInstance: App
         get() = applicationContext as App
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         lifecycleScope.launch {
             appInstance.networkUiEvents.collectLatest { event ->
@@ -81,7 +86,10 @@ class MainActivity : ComponentActivity() {
             }
         }
         setContent {
-            GitFolioTheme {
+            val themeViewModel: ThemeViewModel = hiltViewModel()
+            val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
+
+            GitFolioTheme(darkTheme = isDarkTheme) {
                 val navController = rememberNavController()
                 
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -158,7 +166,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-                    ) { innerPadding -> AppMain(Modifier.padding(innerPadding), navController) }
+                    ) { innerPadding -> AppMain(Modifier.padding(innerPadding), navController, themeViewModel) }
             }
         }
     }
@@ -183,7 +191,7 @@ fun LandingScreen(
 }
 
 @Composable
-fun AppMain(modifier: Modifier, navController: NavHostController) {
+fun AppMain(modifier: Modifier, navController: NavHostController, themeViewModel: ThemeViewModel) {
     BackHandler(enabled = true) {
         if (navController.previousBackStackEntry != null) {
             navController.popBackStack()
@@ -222,7 +230,7 @@ fun AppMain(modifier: Modifier, navController: NavHostController) {
                 )
             }
             composable(SETTINGS_SCREEN) {
-                SettingsScreen(navController)
+                SettingsScreen(navController, themeViewModel)
             }
         }
     }
