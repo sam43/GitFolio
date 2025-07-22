@@ -10,6 +10,7 @@ import io.sam43.gitfolio.utils.ErrorHandler
 import io.sam43.gitfolio.utils.ErrorType
 import io.sam43.gitfolio.utils.Result
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
@@ -51,32 +52,28 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getUserDetails(username: String): Flow<Result<UserDetail>> = flow {
-        try {
-            val response = apiService.getUser(username)
-            if (response.isSuccessful) {
-                response.body()?.let { userDetail ->
-                    emit(Result.Success(userDetail))
-                } ?: emit(Result.Error(ErrorHandler.handleError(AppException.EmptyBodyError())))
-            } else {
-                emit(Result.Error(ErrorHandler.handleError(AppException.ApiError(response.code(), "API Error: ${response.code()}"))))
-            }
-        } catch (e: Exception) {
-            emit(Result.Error(ErrorHandler.handleError(e)))
+        val response = apiService.getUser(username)
+        if (response.isSuccessful) {
+            response.body()?.let { userDetail ->
+                emit(Result.Success(userDetail))
+            } ?: emit(Result.Error(ErrorHandler.handleError(AppException.EmptyBodyError())))
+        } else {
+            emit(Result.Error(ErrorHandler.handleError(AppException.ApiError(response.code(), "API Error: ${response.code()}"))))
         }
+    }.catch { e ->
+        emit(Result.Error(ErrorHandler.handleError(e as Exception)))
     }
 
     override suspend fun getUserRepositories(username: String): Flow<Result<List<Repo>>> = flow {
-        try {
-            val response = apiService.getUserRepos(username)
-            if (response.isSuccessful) {
-                response.body()?.let { repos ->
-                    emit(Result.Success(repos))
-                } ?: emit(Result.Error(ErrorHandler.handleError(AppException.EmptyBodyError())))
-            } else {
-                emit(Result.Error(ErrorHandler.handleError(AppException.ApiError(response.code(), "API Error: ${response.code()}"))))
-            }
-        } catch (e: Exception) {
-            emit(Result.Error(ErrorHandler.handleError(e)))
+        val response = apiService.getUserRepos(username)
+        if (response.isSuccessful) {
+            response.body()?.let { repos ->
+                emit(Result.Success(repos))
+            } ?: emit(Result.Error(ErrorHandler.handleError(AppException.EmptyBodyError())))
+        } else {
+            emit(Result.Error(ErrorHandler.handleError(AppException.ApiError(response.code(), "API Error: ${response.code()}"))))
         }
+    }.catch { e ->
+        emit(Result.Error(ErrorHandler.handleError(e as Exception)))
     }
 }

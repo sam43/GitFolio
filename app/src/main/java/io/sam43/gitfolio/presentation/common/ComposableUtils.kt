@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 
 
 @Composable
@@ -26,3 +28,14 @@ fun CenteredCircularProgressIndicator(modifier: Modifier = Modifier) {
         )
     }
 }
+
+@Composable
+fun String.LoadImageWith(
+    modifier: Modifier,
+    scale: ContentScale = ContentScale.Inside,
+): Unit = AsyncImage(
+    model = this,
+    contentDescription = "avatar",
+    contentScale = scale,
+    modifier = modifier
+)

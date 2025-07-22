@@ -6,7 +6,7 @@ import io.mockk.coVerify
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.domain.model.Repo
-import io.sam43.gitfolio.domain.usecases.FetchUserUseCase
+import io.sam43.gitfolio.domain.usecases.GetUserListUseCase
 import io.sam43.gitfolio.domain.usecases.GetUserDetailsUseCase
 import io.sam43.gitfolio.domain.usecases.GetUserRepositoriesUseCase
 import io.sam43.gitfolio.utils.ErrorType
@@ -28,7 +28,7 @@ import org.junit.Assert.*
 class UserViewModelTest {
     
     private lateinit var userViewModel: UserViewModel
-    private lateinit var fetchUserUseCase: FetchUserUseCase
+    private lateinit var getUserListUseCase: GetUserListUseCase
     private lateinit var getUserDetailsUseCase: GetUserDetailsUseCase
     private lateinit var getUserRepositoriesUseCase: GetUserRepositoriesUseCase
 
@@ -54,9 +54,7 @@ class UserViewModelTest {
         bio = "There once was...",
         publicRepos = 8,
         followers = 20,
-        following = 0,
-        createdAt = "2008-01-14T04:33:35Z",
-        updatedAt = "2008-01-14T04:33:35Z"
+        following = 0
     )
     // Test Fixture - test user repository data
     private val testRepo = Repo(
@@ -69,22 +67,19 @@ class UserViewModelTest {
         stargazersCount = 80,
         forksCount = 9,
         openIssuesCount = 0,
-        fork = false,
-        createdAt = "2011-01-26T19:01:12Z",
-        updatedAt = "2011-01-26T19:14:43Z",
-        pushedAt = "2011-01-26T19:06:43Z"
+        fork = false
     )
     
     @Before
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         
-        fetchUserUseCase = mockk()
+        getUserListUseCase = mockk()
         getUserDetailsUseCase = mockk()
         getUserRepositoriesUseCase = mockk()
         
         userViewModel = UserViewModel(
-            fetchUserUseCase,
+            getUserListUseCase,
             getUserDetailsUseCase,
             getUserRepositoriesUseCase
         )
@@ -99,7 +94,7 @@ class UserViewModelTest {
     fun `getAllUsers should update users state on success`() = runTest {
         // Given
         val expectedUsers = listOf(testUser)
-        coEvery { fetchUserUseCase() } returns flowOf(Result.Success(expectedUsers))
+        coEvery { getUserListUseCase() } returns flowOf(Result.Success(expectedUsers))
         
         // When
         userViewModel.getAllUsers()
@@ -113,7 +108,7 @@ class UserViewModelTest {
     @Test
     fun `getAllUsers with loading state should update loading state`() = runTest {
         // Given
-        coEvery { fetchUserUseCase() } returns flowOf(Result.Loading)
+        coEvery { getUserListUseCase() } returns flowOf(Result.Loading)
         
         // When
         userViewModel.getAllUsers()
@@ -127,7 +122,7 @@ class UserViewModelTest {
     fun `getAllUsers with error should update error state`() = runTest {
         // Given
         val errorType = ErrorType.NetworkError
-        coEvery { fetchUserUseCase() } returns flowOf(Result.Error(errorType))
+        coEvery { getUserListUseCase() } returns flowOf(Result.Error(errorType))
         
         // When
         userViewModel.getAllUsers()
@@ -142,7 +137,7 @@ class UserViewModelTest {
         // Given
         val query = "octocat"
         val expectedUsers = listOf(testUser)
-        coEvery { fetchUserUseCase(query) } returns flowOf(Result.Success(expectedUsers))
+        coEvery { getUserListUseCase(query) } returns flowOf(Result.Success(expectedUsers))
         
         // When
         userViewModel.searchUsers(query)
@@ -157,7 +152,7 @@ class UserViewModelTest {
     fun `searchUsers with loading state should update loading state`() = runTest {
         // Given
         val query = "octocat"
-        coEvery { fetchUserUseCase(query) } returns flowOf(Result.Loading)
+        coEvery { getUserListUseCase(query) } returns flowOf(Result.Loading)
         
         // When
         userViewModel.searchUsers(query)
@@ -172,7 +167,7 @@ class UserViewModelTest {
         // Given
         val query = "octocat"
         val errorType = ErrorType.NetworkError
-        coEvery { fetchUserUseCase(query) } returns flowOf(Result.Error(errorType))
+        coEvery { getUserListUseCase(query) } returns flowOf(Result.Error(errorType))
         
         // When
         userViewModel.searchUsers(query)
@@ -186,13 +181,13 @@ class UserViewModelTest {
     fun `searchUsers with empty query should call use case`() = runTest {
         // Given
         val query = ""
-        coEvery { fetchUserUseCase(query) } returns flowOf(Result.Success(emptyList()))
+        coEvery { getUserListUseCase(query) } returns flowOf(Result.Success(emptyList()))
         
         // When
         userViewModel.searchUsers(query)
         
         // Then
-        coVerify { fetchUserUseCase(query) }
+        coVerify { getUserListUseCase(query) }
     }
     
     @Test

@@ -1,5 +1,6 @@
 package io.sam43.gitfolio.presentation.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,15 +19,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import io.sam43.gitfolio.domain.model.User
+import io.sam43.gitfolio.presentation.common.AppNavigation
+import io.sam43.gitfolio.presentation.common.AppNavigation.Companion.USER_PROFILE_SCREEN
 import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
+import io.sam43.gitfolio.presentation.common.LoadImageWith
 import io.sam43.gitfolio.presentation.viewmodels.UserListState
 import io.sam43.gitfolio.presentation.viewmodels.UserListViewModel
 
@@ -36,11 +38,13 @@ fun UserListScreen(
     viewModel: UserListViewModel = hiltViewModel()
 ) {
     val state = viewModel.state.collectAsState()
-    UserListView(state.value)
+    UserListView(state.value) {
+        AppNavigation.navigateTo(navController = navController, route = "${USER_PROFILE_SCREEN}/${it.login}")
+    }
 }
 
 @Composable
-fun UserListView(value: UserListState) {
+fun UserListView(value: UserListState, onItemClick: (User) -> Unit) {
     when {
         value.isLoading -> {
             CenteredCircularProgressIndicator(modifier = Modifier.padding(16.dp))
@@ -49,18 +53,18 @@ fun UserListView(value: UserListState) {
             Text(text = "Error: ${value.error}")
         }
         else -> {
-            UserList(users = value.users)
+            UserList(users = value.users) { onItemClick(it) }
         }
     }
 }
 @Composable
-fun UserList(users: List<User>, modifier: Modifier = Modifier) {
+fun UserList(users: List<User>, modifier: Modifier = Modifier, onListItemClick: (User) -> Unit = {}) {
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
         items(users) { user ->
-            UserListItem(user = user)
+            UserListItem(user = user) { onListItemClick(user) }
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                 modifier = Modifier.padding(start = 88.dp, end = 8.dp)
@@ -70,17 +74,15 @@ fun UserList(users: List<User>, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun UserListItem(user: User) {
+fun UserListItem(user: User, onClick: () -> Unit = {}) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        AsyncImage(
-            model = user.avatarUrl,
-            contentDescription = "${user.login} avatar",
-            contentScale = ContentScale.Inside,
+        user.avatarUrl.LoadImageWith(
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
@@ -93,7 +95,6 @@ fun UserListItem(user: User) {
         )
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
@@ -110,6 +111,7 @@ private fun PreviewUserListScreen() {
             users = dummyList(),
             isLoading = false,
             error = null
-        )
+        ),
+        onItemClick = {}
     )
 }

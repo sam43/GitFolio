@@ -45,9 +45,11 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.sam43.gitfolio.presentation.common.AppNavigation
 import io.sam43.gitfolio.presentation.common.AppNavigation.Companion.SETTINGS_SCREEN
 import io.sam43.gitfolio.presentation.common.AppNavigation.Companion.USERS_SCREEN
+import io.sam43.gitfolio.presentation.common.AppNavigation.Companion.USER_PROFILE_SCREEN
 import io.sam43.gitfolio.presentation.common.NetworkUiEvent
 import io.sam43.gitfolio.presentation.common.bottomNavItems
 import io.sam43.gitfolio.presentation.common.theme.GitFolioTheme
+import io.sam43.gitfolio.presentation.screens.GithubProfileScreen
 import io.sam43.gitfolio.presentation.screens.SearchBox
 import io.sam43.gitfolio.presentation.screens.SettingsScreen
 import io.sam43.gitfolio.presentation.screens.UserListScreen
@@ -77,7 +79,7 @@ class MainActivity : ComponentActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
                 val currentScreenTitle = bottomNavItems.find { it.route == currentRoute }?.title
-                    ?: R.string.app_name
+                    ?: R.string.empty_string
 
                 val selectedItemIndex = bottomNavItems.indexOfFirst { it.route == currentRoute }
                     .takeIf { it >= 0 } ?: 0
@@ -85,7 +87,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
-                        TopAppBar(
+                        if (getString(currentScreenTitle).isNotEmpty()) TopAppBar(
                             title = { Text(
                                 text = getString(currentScreenTitle),
                                 fontWeight = FontWeight.Bold,
@@ -182,6 +184,10 @@ fun AppMain(modifier: Modifier, navController: NavHostController) {
     ) {
         composable(USERS_SCREEN) {
             LandingScreen(navController = navController)
+        }
+        composable("${USER_PROFILE_SCREEN}/{user_name}") { backStackEntry ->
+            val userName = backStackEntry.arguments?.getString("user_name") ?: ""
+            GithubProfileScreen(navController, userName)
         }
         composable(SETTINGS_SCREEN) {
             SettingsScreen(navController)

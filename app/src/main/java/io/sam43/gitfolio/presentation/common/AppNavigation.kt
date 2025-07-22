@@ -41,8 +41,8 @@ class AppNavigation {
          * @param navOptions Optional NavOptions for customizing navigation behavior (e.g., popUpTo).
          * @param navigatorExtras Optional Navigator.Extras for passing specific extras to the navigator.
          */
-        const val TAG = "AppNavigation"
         const val USERS_SCREEN = "users_screen"
+        const val USER_PROFILE_SCREEN = "user_profile_screen"
         const val SETTINGS_SCREEN = "settings_screen"
 
         fun navigateTo(
@@ -51,12 +51,6 @@ class AppNavigation {
             navOptions: NavOptions? = null,
             navigatorExtras: Navigator.Extras? = null
         ) {
-            // Basic navigation:
-            // navController.navigate(route)
-
-            // More controlled navigation, ensuring it runs on the main thread
-            // and preventing multiple rapid clicks from triggering multiple navigations
-            // to the same destination if the current destination is already the target route.
             if (navController.currentDestination?.route != route) {
                 navController.navigate(route, navOptions, navigatorExtras)
             }
@@ -77,13 +71,5 @@ class AppNavigation {
                 }
             }
         }
-    }
-
-    fun navigateBack(navController: NavController) {
-        navController.popBackStack()
-    }
-
-    fun navigateBackToUsers(navController: NavController) {
-        navController.popBackStack("users_screen", inclusive = false)
     }
 }

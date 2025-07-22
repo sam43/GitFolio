@@ -2,4 +2,5 @@
     <string name="app_name">GitFolio</string>
     <string name="title_users">Users</string>
     <string name="title_settings">Settings</string>
+    <string name="empty_string" />
 </resources>

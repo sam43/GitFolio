@@ -6,7 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.domain.model.Repo
-import io.sam43.gitfolio.domain.usecases.FetchUserUseCase
+import io.sam43.gitfolio.domain.usecases.GetUserListUseCase
 import io.sam43.gitfolio.domain.usecases.GetUserDetailsUseCase
 import io.sam43.gitfolio.domain.usecases.GetUserRepositoriesUseCase
 import io.sam43.gitfolio.utils.ErrorHandler
@@ -20,7 +20,7 @@ import javax.inject.Inject
 @Deprecated("This class is deprecated. I will be implementing separate VM for each screen. Unit testing is easier with it though.")
 @HiltViewModel
 class UserViewModel @Inject constructor(
-    private val fetchUserUseCase: FetchUserUseCase,
+    private val getUserListUseCase: GetUserListUseCase,
     private val getUserDetailsUseCase: GetUserDetailsUseCase,
     private val getUserRepositoriesUseCase: GetUserRepositoriesUseCase
 ) : ViewModel() {
@@ -42,7 +42,7 @@ class UserViewModel @Inject constructor(
 
     fun getAllUsers() {
         viewModelScope.launch {
-            fetchUserUseCase().collect { result ->
+            getUserListUseCase().collect { result ->
                 when (result) {
                     is Result.Loading -> {
                         _isLoading.value = true
@@ -64,7 +64,7 @@ class UserViewModel @Inject constructor(
 
     fun searchUsers(query: String) {
         viewModelScope.launch {
-            fetchUserUseCase(query).collect { result ->
+            getUserListUseCase(query).collect { result ->
                 when (result) {
                     is Result.Loading -> {
                         _isLoading.value = true

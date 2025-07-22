@@ -1,10 +1,9 @@
 package io.sam43.gitfolio.presentation.viewmodels
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.sam43.gitfolio.domain.model.User
-import io.sam43.gitfolio.domain.usecases.FetchUserUseCase
+import io.sam43.gitfolio.domain.usecases.GetUserListUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +11,6 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import io.sam43.gitfolio.utils.Result
 import io.sam43.gitfolio.utils.NetworkMonitor
-import io.sam43.gitfolio.utils.NetworkStatus
 import kotlinx.coroutines.flow.collectLatest
 
 data class UserListState(
@@ -23,41 +21,22 @@ data class UserListState(
 
 @HiltViewModel
 class UserListViewModel @Inject constructor(
-    private val fetchUserUseCase: FetchUserUseCase,
-    private val networkMonitor: NetworkMonitor
-) : ViewModel() {
+    private val useCase: GetUserListUseCase,
+    networkMonitor: NetworkMonitor
+) : ParentViewModel(networkMonitor) {
     private val _state = MutableStateFlow(UserListState(isLoading = true))
     val state: StateFlow<UserListState> = _state.asStateFlow()
-    
-    private var wasOffline = false
 
     init {
-        fetchUsers()
-        monitorNetworkChanges()
-    }
-    
-    private fun monitorNetworkChanges() {
-        viewModelScope.launch {
-            networkMonitor.networkStatus.collectLatest { status ->
-                when (status) {
-                    is NetworkStatus.Available -> {
-                        if (wasOffline) {
-                            fetchUsers()
-                            wasOffline = false
-                        }
-                    }
-                    is NetworkStatus.Unavailable, 
-                    is NetworkStatus.IncapableOfInternetConnection -> {
-                        wasOffline = true
-                    }
-                }
-            }
-        }
+        monitorNetworkChanges(
+            onConnectedAction = ::fetchUsers,
+            onDisconnectedAction = {/* do nothing for now */}
+        )
     }
     
     private fun fetchUsers() {
         viewModelScope.launch {
-            fetchUserUseCase().collect { result ->
+            useCase().collectLatest { result ->
                 when (result) {
                     is Result.Loading -> {
                         _state.value = UserListState(isLoading = true)
@@ -79,9 +58,9 @@ class UserListViewModel @Inject constructor(
         }
     }
 
-    private fun searchUsers(q: String) {
+    fun searchUsers(q: String) {
         viewModelScope.launch {
-            fetchUserUseCase.invoke(q).collect { result ->
+            useCase.invoke(q).collectLatest { result ->
                 when (result) {
                     is Result.Loading -> {
                         _state.value = UserListState(isLoading = true)

@@ -14,14 +14,14 @@ import org.junit.Test
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 
-class FetchUserUseCaseTest {
+class GetUserListUseCaseTest {
 
     private val mockUserRepository = mockk<UserRepository>(relaxed = true)
-    private lateinit var fetchUserUseCase: FetchUserUseCase
+    private lateinit var getUserListUseCase: GetUserListUseCase
 
     @Before
     fun setUp() {
-        fetchUserUseCase = FetchUserUseCase(mockUserRepository)
+        getUserListUseCase = GetUserListUseCase(mockUserRepository)
     }
 
     @Test
@@ -48,7 +48,7 @@ class FetchUserUseCaseTest {
         coEvery { mockUserRepository.searchUsers(query) } returns flowOf(Result.Success(expectedUsers))
 
         // When
-        val result = fetchUserUseCase(query).toList()
+        val result = getUserListUseCase(query).toList()
 
         // Then
         assertEquals(1, result.size)
@@ -65,7 +65,7 @@ class FetchUserUseCaseTest {
         coEvery { mockUserRepository.searchUsers(query) } returns flowOf(Result.Success(expectedUsers))
 
         // When
-        val result = fetchUserUseCase(query).toList()
+        val result = getUserListUseCase(query).toList()
         println("Emitted results: $result")
 
         // Then
@@ -80,7 +80,7 @@ class FetchUserUseCaseTest {
         coEvery { mockUserRepository.searchUsers(query) } returns flowOf(Result.Error(ErrorType.NetworkError))
 
         // When
-        val result = fetchUserUseCase(query).toList()
+        val result = getUserListUseCase(query).toList()
 
         // Then
         assertEquals(1, result.size)
@@ -96,7 +96,7 @@ class FetchUserUseCaseTest {
         coEvery { mockUserRepository.searchUsers(query) } returns flowOf(Result.Loading)
 
         // When
-        val result = fetchUserUseCase(query).toList()
+        val result = getUserListUseCase(query).toList()
 
         // Then
         assertEquals(1, result.size)
