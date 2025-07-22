@@ -2,14 +2,10 @@
 
 package io.sam43.gitfolio.presentation.screens
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -26,9 +22,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,86 +40,66 @@ import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
 import io.sam43.gitfolio.presentation.viewmodels.UserListState
 import io.sam43.gitfolio.presentation.viewmodels.UserListViewModel
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun UserListScreen(
     navController: NavController,
     sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: UserListViewModel = hiltViewModel()
 ) {
-    val state = viewModel.state.collectAsState().value
-    if (state.isLoading && state.error.isNullOrEmpty()) {
-        CenteredCircularProgressIndicator()
-    } else if (!state.isLoading && state.error.isNullOrEmpty()) {
-        UserListView(state, sharedTransitionScope) { user ->
-            // Pass user data through navigation arguments
+    val state by viewModel.state.collectAsState()
+
+    when {
+        state.isLoading && state.error.isNullOrEmpty() -> CenteredCircularProgressIndicator()
+        !state.error.isNullOrEmpty() -> ErrorScreen(errorText = state.error ?: "")
+        else ->
+            UserList(
+            userListState = state,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope
+        ) { user ->
+            val encodedAvatarUrl = URLEncoder.encode(user.avatarUrl, StandardCharsets.UTF_8.toString())
             AppNavigation.navigateTo(
-                navController = navController, 
-                route = "${USER_PROFILE_SCREEN}/${user.login}?avatarUrl=${user.avatarUrl}&displayName=${user.login}"
+                navController = navController,
+                route = "${USER_PROFILE_SCREEN}/${user.login}?avatarUrl=${encodedAvatarUrl}&displayName=${user.login}"
             )
         }
-    } else {
-        ErrorScreen(errorText = state.error ?: "")
     }
 }
 
 @Composable
-fun UserListView(
-    value: UserListState,
-    sharedTransitionScope: SharedTransitionScope,
-    onItemClick: (User) -> Unit
-) {
-    UserList(userListState = value, sharedTransitionScope = sharedTransitionScope) { onItemClick(it) }
-}
-// In your UserListScreen.kt where UserList is defined
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
 fun UserList(
-    userListState: UserListState, // Assuming this is your data state
+    userListState: UserListState,
     sharedTransitionScope: SharedTransitionScope,
-    onItemClick: (User) -> Unit = {} // Added onItemClick based on your project code
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    onItemClick: (User) -> Unit = {}
 ) {
-    AnimatedContent(
-        targetState = userListState, // Or whatever drives the list updates
-        transitionSpec = {
-            // This transitionSpec is for how the UserList itself animates when its content changes
-            fadeIn(animationSpec = tween(durationMillis = 1500)) togetherWith fadeOut(animationSpec = tween(durationMillis = 1500))
-        },
-        label = "UserListAnimation" // Good practice to add a label
-    ) { targetState -> // targetState is the current UserListState
-
-        // THIS `this` is the AnimatedVisibilityScope from the AnimatedContent above
-        val lazyColumnAnimatedVisibilityScope = this
-
-        LazyColumn {
-            items(targetState.users, key = { user -> user.id }) { user -> // Add a key to items for better performance
-                UserListItem(
-                    user = user,
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = lazyColumnAnimatedVisibilityScope, // Pass the scope here
-                    onClick = { onItemClick(user) }
-                )
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                    modifier = Modifier.padding(start = 88.dp, end = 8.dp)
-                )
-            }
+    LazyColumn {
+        items(userListState.users, key = { user -> user.id }) { user ->
+            UserListItem(
+                user = user,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
+                onClick = { onItemClick(user) }
+            )
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                modifier = Modifier.padding(start = 88.dp, end = 8.dp)
+            )
         }
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun UserListItem(
     user: User,
     sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope, // Pass this from the parent AnimatedContent
+    animatedVisibilityScope: AnimatedVisibilityScope,
     onClick: () -> Unit = {}
 ) {
-    // No need for AnimatedContent here if the item itself isn't animating its own content changes
-    // based on the 'user' object changing TO a NEW user object for the SAME list item instance.
-    // The shared element transition is about this item animating to/from another screen.
-
     with(sharedTransitionScope) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -133,12 +111,11 @@ fun UserListItem(
             user.avatarUrl.LoadImageWith(
                 modifier = Modifier
                     .size(56.dp)
-                    .clip(CircleShape)
+                    .clip(RectangleShape)
                     .sharedElement(
                         sharedContentState = rememberSharedContentState(key = "user-avatar-${user.login}"),
                         animatedVisibilityScope = animatedVisibilityScope,
-                        renderInOverlayDuringTransition = true,
-                        zIndexInOverlay = 0f
+                        boundsTransform = { _, _ -> tween(300) }
                     )
             )
             Spacer(Modifier.width(16.dp))
@@ -150,8 +127,7 @@ fun UserListItem(
                     .sharedElement(
                         sharedContentState = rememberSharedContentState(key = "username-${user.login}"),
                         animatedVisibilityScope = animatedVisibilityScope,
-                        renderInOverlayDuringTransition = true,
-                        zIndexInOverlay = 0f
+                        boundsTransform = { _, _ -> tween(300) }
                     )
             )
         }

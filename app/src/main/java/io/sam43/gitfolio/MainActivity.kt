@@ -7,6 +7,10 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,9 +49,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import dagger.hilt.android.AndroidEntryPoint
 import io.sam43.gitfolio.presentation.common.AppNavigation
 import io.sam43.gitfolio.presentation.common.AppNavigation.Companion.SETTINGS_SCREEN
@@ -166,7 +167,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun LandingScreen(
     navController: NavController,
-    sharedTransitionScope: SharedTransitionScope
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope
 ) {
     var searchQuery by remember { mutableStateOf("") }
     Column(modifier = Modifier.fillMaxSize()) {
@@ -176,7 +178,7 @@ fun LandingScreen(
             modifier = Modifier
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         )
-        UserListScreen(navController, sharedTransitionScope)
+        UserListScreen(navController, sharedTransitionScope, animatedVisibilityScope)
     }
 }
 
@@ -196,30 +198,27 @@ fun AppMain(modifier: Modifier, navController: NavHostController) {
             composable(USERS_SCREEN) {
                 LandingScreen(
                     navController = navController,
-                    sharedTransitionScope = this@SharedTransitionLayout
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this
                 )
             }
             composable(
-                route = "${USER_PROFILE_SCREEN}/{user_name}?avatarUrl={avatarUrl}&displayName={displayName}",
+                route = "${USER_PROFILE_SCREEN}/{username}?avatarUrl={avatarUrl}&displayName={displayName}",
                 arguments = listOf(
-                    navArgument("user_name") { type = NavType.StringType },
-                    navArgument("avatarUrl") { 
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    },
-                    navArgument("displayName") { 
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    }
+                    navArgument("username") { type = NavType.StringType },
+                    navArgument("avatarUrl") { type = NavType.StringType },
+                    navArgument("displayName") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
-                val userName = backStackEntry.arguments?.getString("user_name") ?: ""
+                val username = backStackEntry.arguments?.getString("username") ?: ""
+                val avatarUrl = backStackEntry.arguments?.getString("avatarUrl") ?: ""
+                val displayName = backStackEntry.arguments?.getString("displayName") ?: ""
                 GithubProfileScreen(
-                    navController = navController,
-                    username = userName,
-                    sharedTransitionScope = this@SharedTransitionLayout
+                    username = username,
+                    avatarUrl = avatarUrl,
+                    displayName = displayName,
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this
                 )
             }
             composable(SETTINGS_SCREEN) {

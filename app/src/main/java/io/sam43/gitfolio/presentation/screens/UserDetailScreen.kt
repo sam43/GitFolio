@@ -2,12 +2,11 @@
 
 package io.sam43.gitfolio.presentation.screens
 
-
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,78 +44,81 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
 import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
-import io.sam43.gitfolio.presentation.common.theme.GitFolioTheme
 import io.sam43.gitfolio.presentation.viewmodels.UserProfileDetailsViewModel
-import io.sam43.gitfolio.presentation.viewmodels.UserProfileState
 import io.sam43.gitfolio.utils.toFormattedCountString
 
 @Composable
 fun GithubProfileScreen(
-    navController: NavController,
     username: String,
+    avatarUrl: String,
+    displayName: String,
     sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: UserProfileDetailsViewModel = hiltViewModel()
 ) {
     LaunchedEffect(username) {
         viewModel.fetchUserProfileByUsername(username)
     }
-    val state = viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsState()
 
-    if (state.value.error.isNullOrEmpty()) {
-        AnimatedContent(
-            targetState = state,
-            label = "UserProfileContentAnimation" // Added label
-        ) { animatedTargetState -> // Renamed 'it' for clarity
-            // It's generally safer to use the animatedTargetState directly
-            // as 'state' might have updated again by the time this lambda runs for a previous state
-            if (animatedTargetState.value.isLoading) {
-                CenteredCircularProgressIndicator()
-            } else if (animatedTargetState.value.user != null) { // Ensure user is not null before showing UserProfileView
-                UserProfileView(
-                    state = animatedTargetState.value, // Use the state from AnimatedContent's lambda
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedContentScope = this // 'this' here is the AnimatedContentScope
-                )
-            }
-            // You might want a placeholder or different UI if user is null but not loading and no error
-            // For example, if the API call finishes but returns no user for some reason.
-            // Currently, it would just show nothing in that case.
-        }
+    if (state.error != null) {
+        ErrorScreen(errorText = state.error ?: "")
     } else {
-        ErrorScreen(errorText = state.value.error ?: "")
+        // Use the initial data for the initial composition
+        val userDetail = state.user ?: UserDetail(
+            login = displayName,
+            avatarUrl = avatarUrl,
+            name = displayName,
+            followers = 0,
+            following = 0,
+            id = 0,
+            htmlUrl = "",
+            company = "",
+            blog = "",
+            location = "",
+            email = "",
+            publicRepos = 0,
+            bio = ""
+        )
+
+        UserProfileView(
+            user = userDetail,
+            repositories = state.repositories,
+            isLoading = state.isLoading,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope
+        )
     }
 }
 
 @Composable
 fun UserProfileView(
-    state: UserProfileState,
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedContentScope: AnimatedContentScope? = null
+    user: UserDetail,
+    repositories: List<Repo>,
+    isLoading: Boolean,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope
 ) {
     val headerHeight = 280.dp
-    val toolbarHeight = 64.dp
 
     val headerHeightPx = with(LocalDensity.current) { headerHeight.toPx() }
-    val toolbarHeightPx = with(LocalDensity.current) { toolbarHeight.toPx() }
 
-    // State to track the header's offset
     val headerOffsetHeightPx = remember { mutableFloatStateOf(0f) }
 
     val nestedScrollConnection = remember {
@@ -124,7 +126,6 @@ fun UserProfileView(
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 val delta = available.y
                 val newOffset = headerOffsetHeightPx.floatValue + delta
-                // Clamp the offset to be between -headerHeightPx and 0
                 headerOffsetHeightPx.floatValue = newOffset.coerceIn(-headerHeightPx, 0f)
                 return Offset.Zero
             }
@@ -140,38 +141,35 @@ fun UserProfileView(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            RepoList(
-                reposList = state.repositories,
+            if (isLoading && repositories.isEmpty()) {
+                CenteredCircularProgressIndicator()
+            } else {
+                RepoList(
+                    reposList = repositories,
+                    headerHeight = headerHeight,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            CollapsingToolbar(
+                user = user,
                 headerHeight = headerHeight,
-                modifier = Modifier.fillMaxSize()
+                offset = headerOffsetHeightPx.floatValue,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(headerHeight)
+                    .graphicsLayer {
+                        translationY = headerOffsetHeightPx.floatValue
+                    }
             )
 
-            // Collapsing Header
-            state.user?.let {
-                CollapsingToolbar(
-                    user = it,
-                    headerHeight = headerHeight,
-                    offset = headerOffsetHeightPx.floatValue,
-                    sharedTransitionScope = sharedTransitionScope!!,
-                    animatedContentScope = animatedContentScope!!,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(headerHeight)
-                        .graphicsLayer {
-                            translationY = headerOffsetHeightPx.floatValue
-                        }
-                )
-            }
-
-            // Sticky Toolbar that appears on collapse
-            state.user?.let {
-                CollapsingTopBar(
-                    user = it,
-                    toolbarHeight = toolbarHeight,
-                    headerHeight = headerHeight,
-                    offset = headerOffsetHeightPx.floatValue
-                )
-            }
+            CollapsingTopBar(
+                user = user,
+                headerHeight = headerHeight,
+                offset = headerOffsetHeightPx.floatValue
+            )
         }
     }
 }
@@ -189,14 +187,13 @@ fun RepoList(reposList: List<Repo>, headerHeight: Dp, modifier: Modifier = Modif
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class) // Ensure this OptIn is present
 @Composable
 fun CollapsingToolbar(
     user: UserDetail,
     headerHeight: Dp,
     offset: Float,
     sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope, // This is correctly passed
+    animatedVisibilityScope: AnimatedVisibilityScope,
     modifier: Modifier = Modifier
 ) {
     val collapseFraction = (offset / -with(LocalDensity.current) { headerHeight.toPx() }).coerceIn(0f, 1f)
@@ -207,17 +204,15 @@ fun CollapsingToolbar(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // This is where you use the scopes for shared elements
-        with(sharedTransitionScope) { // Use the sharedTransitionScope
+        with(sharedTransitionScope) {
             user.avatarUrl.LoadImageWith(
                 modifier = Modifier
                     .size(imageSize)
-                    .clip(CircleShape)
+                    .clip(RectangleShape)
                     .sharedElement(
                         sharedContentState = rememberSharedContentState(key = "user-avatar-${user.login}"),
-                        animatedVisibilityScope = animatedContentScope,
-                        renderInOverlayDuringTransition = true,
-                        zIndexInOverlay = 1f
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        boundsTransform = { _, _ -> tween(300) }
                     )
                     .graphicsLayer {
                         translationY = offset * 0.4f
@@ -232,13 +227,12 @@ fun CollapsingToolbar(
                 modifier = Modifier
                     .sharedElement(
                         sharedContentState = rememberSharedContentState(key = "username-${user.login}"),
-                        animatedVisibilityScope = animatedContentScope,
-                        renderInOverlayDuringTransition = true,
-                        zIndexInOverlay = 1f
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        boundsTransform = { _, _ -> tween(300) }
                     )
                     .graphicsLayer { alpha = 1f - collapseFraction * 2 }
             )
-            Text( // This item is probably not shared, but shown for context
+            Text(
                 "@${user.login}",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -257,11 +251,10 @@ fun CollapsingToolbar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CollapsingTopBar(user: UserDetail, toolbarHeight: Dp, headerHeight: Dp, offset: Float) {
+fun CollapsingTopBar(user: UserDetail, headerHeight: Dp, offset: Float) {
     val headerHeightPx = with(LocalDensity.current) { headerHeight.toPx() }
     val collapseThreshold = headerHeightPx * 0.7f
 
-    // Animate alpha based on whether the scroll offset has passed the threshold
     val toolbarAlpha by animateFloatAsState(
         targetValue = if (-offset > collapseThreshold) 1f else 0f,
         label = "Toolbar Alpha"
@@ -363,12 +356,3 @@ fun FollowerInfo(followers: Int, following: Int, modifier: Modifier = Modifier) 
 fun Int.toFollowersString(): String = this.toFormattedCountString()
 
 fun Int.toFollowingsString(): String = this.toFormattedCountString()
-
-@Preview(showBackground = true, device = "id:pixel_6")
-@Composable
-fun GithubProfileScreenPreview() {
-    val stateValue = UserProfileState()
-    GitFolioTheme {
-        UserProfileView(state = stateValue)
-    }
-}
