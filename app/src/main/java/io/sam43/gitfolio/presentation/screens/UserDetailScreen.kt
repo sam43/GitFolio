@@ -1,6 +1,12 @@
+@file:OptIn(ExperimentalSharedTransitionApi::class)
+
 package io.sam43.gitfolio.presentation.screens
 
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -51,7 +57,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
@@ -66,23 +71,45 @@ import io.sam43.gitfolio.utils.toFormattedCountString
 fun GithubProfileScreen(
     navController: NavController,
     username: String,
+    sharedTransitionScope: SharedTransitionScope,
     viewModel: UserProfileDetailsViewModel = hiltViewModel()
 ) {
     LaunchedEffect(username) {
         viewModel.fetchUserProfileByUsername(username)
     }
-    val state = viewModel.state.collectAsState().value
-    if (state.isLoading && state.error.isNullOrEmpty()) {
-        CenteredCircularProgressIndicator()
-    } else if (!state.isLoading && state.error.isNullOrEmpty()) {
-        UserProfileView(state, navController)
+    val state = viewModel.state.collectAsState()
+
+    if (state.value.error.isNullOrEmpty()) {
+        AnimatedContent(
+            targetState = state,
+            label = "UserProfileContentAnimation" // Added label
+        ) { animatedTargetState -> // Renamed 'it' for clarity
+            // It's generally safer to use the animatedTargetState directly
+            // as 'state' might have updated again by the time this lambda runs for a previous state
+            if (animatedTargetState.value.isLoading) {
+                CenteredCircularProgressIndicator()
+            } else if (animatedTargetState.value.user != null) { // Ensure user is not null before showing UserProfileView
+                UserProfileView(
+                    state = animatedTargetState.value, // Use the state from AnimatedContent's lambda
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedContentScope = this // 'this' here is the AnimatedContentScope
+                )
+            }
+            // You might want a placeholder or different UI if user is null but not loading and no error
+            // For example, if the API call finishes but returns no user for some reason.
+            // Currently, it would just show nothing in that case.
+        }
     } else {
-        ErrorScreen(errorText = state.error ?: "")
+        ErrorScreen(errorText = state.value.error ?: "")
     }
 }
 
 @Composable
-fun UserProfileView(state: UserProfileState, navController: NavController) {
+fun UserProfileView(
+    state: UserProfileState,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedContentScope: AnimatedContentScope? = null
+) {
     val headerHeight = 280.dp
     val toolbarHeight = 64.dp
 
@@ -125,6 +152,8 @@ fun UserProfileView(state: UserProfileState, navController: NavController) {
                     user = it,
                     headerHeight = headerHeight,
                     offset = headerOffsetHeightPx.floatValue,
+                    sharedTransitionScope = sharedTransitionScope!!,
+                    animatedContentScope = animatedContentScope!!,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(headerHeight)
@@ -160,9 +189,16 @@ fun RepoList(reposList: List<Repo>, headerHeight: Dp, modifier: Modifier = Modif
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class) // Ensure this OptIn is present
 @Composable
-fun CollapsingToolbar(user: UserDetail, headerHeight: Dp, offset: Float, modifier: Modifier = Modifier) {
-    // Calculate collapse progress (0.0 to 1.0)
+fun CollapsingToolbar(
+    user: UserDetail,
+    headerHeight: Dp,
+    offset: Float,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope, // This is correctly passed
+    modifier: Modifier = Modifier
+) {
     val collapseFraction = (offset / -with(LocalDensity.current) { headerHeight.toPx() }).coerceIn(0f, 1f)
     val imageSize = (120 * (1 - collapseFraction * 0.5f)).dp
 
@@ -171,31 +207,44 @@ fun CollapsingToolbar(user: UserDetail, headerHeight: Dp, offset: Float, modifie
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Shrinking profile image with parallax
-
-        user.avatarUrl.LoadImageWith(
-            modifier = Modifier
-                .size(imageSize)
-                .clip(CircleShape)
-                .graphicsLayer {
-                    // Parallax scroll effect
-                    translationY = offset * 0.4f
-                }
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            user.name ?: "",
-            fontWeight = FontWeight.Bold,
-            fontSize = 24.sp,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.graphicsLayer { alpha = 1f - collapseFraction * 2 }
-        )
-        Text(
-            "@${user.login}",
-            fontSize = 16.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.graphicsLayer { alpha = 1f - collapseFraction * 2 }
-        )
+        // This is where you use the scopes for shared elements
+        with(sharedTransitionScope) { // Use the sharedTransitionScope
+            user.avatarUrl.LoadImageWith(
+                modifier = Modifier
+                    .size(imageSize)
+                    .clip(CircleShape)
+                    .sharedElement(
+                        sharedContentState = rememberSharedContentState(key = "user-avatar-${user.login}"),
+                        animatedVisibilityScope = animatedContentScope,
+                        renderInOverlayDuringTransition = true,
+                        zIndexInOverlay = 1f
+                    )
+                    .graphicsLayer {
+                        translationY = offset * 0.4f
+                    }
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                user.name ?: "",
+                fontWeight = FontWeight.Bold,
+                fontSize = 24.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .sharedElement(
+                        sharedContentState = rememberSharedContentState(key = "username-${user.login}"),
+                        animatedVisibilityScope = animatedContentScope,
+                        renderInOverlayDuringTransition = true,
+                        zIndexInOverlay = 1f
+                    )
+                    .graphicsLayer { alpha = 1f - collapseFraction * 2 }
+            )
+            Text( // This item is probably not shared, but shown for context
+                "@${user.login}",
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.graphicsLayer { alpha = 1f - collapseFraction * 2 }
+            )
+        }
         Spacer(Modifier.height(16.dp))
         FollowerInfo(
             followers = user.followers,
@@ -204,6 +253,7 @@ fun CollapsingToolbar(user: UserDetail, headerHeight: Dp, offset: Float, modifie
         )
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -319,6 +369,6 @@ fun Int.toFollowingsString(): String = this.toFormattedCountString()
 fun GithubProfileScreenPreview() {
     val stateValue = UserProfileState()
     GitFolioTheme {
-        UserProfileView(state = stateValue, navController = rememberNavController())
+        UserProfileView(state = stateValue)
     }
 }

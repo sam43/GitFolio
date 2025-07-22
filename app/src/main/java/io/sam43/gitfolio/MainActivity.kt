@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalSharedTransitionApi::class)
+
 package io.sam43.gitfolio
 
 import android.os.Bundle
@@ -37,10 +39,17 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import dagger.hilt.android.AndroidEntryPoint
 import io.sam43.gitfolio.presentation.common.AppNavigation
 import io.sam43.gitfolio.presentation.common.AppNavigation.Companion.SETTINGS_SCREEN
@@ -157,7 +166,10 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun LandingScreen(navController: NavController) {
+fun LandingScreen(
+    navController: NavController,
+    sharedTransitionScope: SharedTransitionScope
+) {
     var searchQuery by remember { mutableStateOf("") }
     Column(modifier = Modifier.fillMaxSize()) {
         SearchBox(
@@ -166,7 +178,7 @@ fun LandingScreen(navController: NavController) {
             modifier = Modifier
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         )
-        UserListScreen(navController)
+        UserListScreen(navController, sharedTransitionScope)
     }
 }
 
@@ -177,20 +189,44 @@ fun AppMain(modifier: Modifier, navController: NavHostController) {
             navController.popBackStack()
         }
     }
-    NavHost(
-        navController = navController,
-        startDestination = bottomNavItems.firstOrNull()?.route ?: USERS_SCREEN,
-        modifier = modifier
-    ) {
-        composable(USERS_SCREEN) {
-            LandingScreen(navController = navController)
-        }
-        composable("${USER_PROFILE_SCREEN}/{user_name}") { backStackEntry ->
-            val userName = backStackEntry.arguments?.getString("user_name") ?: ""
-            GithubProfileScreen(navController, userName)
-        }
-        composable(SETTINGS_SCREEN) {
-            SettingsScreen(navController)
+    SharedTransitionLayout {
+        NavHost(
+            navController = navController,
+            startDestination = bottomNavItems.firstOrNull()?.route ?: USERS_SCREEN,
+            modifier = modifier
+        ) {
+            composable(USERS_SCREEN) {
+                LandingScreen(
+                    navController = navController,
+                    sharedTransitionScope = this@SharedTransitionLayout
+                )
+            }
+            composable(
+                route = "${USER_PROFILE_SCREEN}/{user_name}?avatarUrl={avatarUrl}&displayName={displayName}",
+                arguments = listOf(
+                    navArgument("user_name") { type = NavType.StringType },
+                    navArgument("avatarUrl") { 
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("displayName") { 
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val userName = backStackEntry.arguments?.getString("user_name") ?: ""
+                GithubProfileScreen(
+                    navController = navController,
+                    username = userName,
+                    sharedTransitionScope = this@SharedTransitionLayout
+                )
+            }
+            composable(SETTINGS_SCREEN) {
+                SettingsScreen(navController)
+            }
         }
     }
 }
