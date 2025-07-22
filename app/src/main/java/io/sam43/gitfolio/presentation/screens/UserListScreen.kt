@@ -28,6 +28,7 @@ import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.presentation.common.AppNavigation
 import io.sam43.gitfolio.presentation.common.AppNavigation.Companion.USER_PROFILE_SCREEN
 import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
+import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
 import io.sam43.gitfolio.presentation.viewmodels.UserListState
 import io.sam43.gitfolio.presentation.viewmodels.UserListViewModel
@@ -37,25 +38,21 @@ fun UserListScreen(
     navController: NavController,
     viewModel: UserListViewModel = hiltViewModel()
 ) {
-    val state = viewModel.state.collectAsState()
-    UserListView(state.value) {
-        AppNavigation.navigateTo(navController = navController, route = "${USER_PROFILE_SCREEN}/${it.login}")
+    val state = viewModel.state.collectAsState().value
+    if (state.isLoading && state.error.isNullOrEmpty()) {
+        CenteredCircularProgressIndicator()
+    } else if (!state.isLoading && state.error.isNullOrEmpty()) {
+        UserListView(state) {
+            AppNavigation.navigateTo(navController = navController, route = "${USER_PROFILE_SCREEN}/${it.login}")
+        }
+    } else {
+        ErrorScreen(errorText = state.error ?: "")
     }
 }
 
 @Composable
 fun UserListView(value: UserListState, onItemClick: (User) -> Unit) {
-    when {
-        value.isLoading -> {
-            CenteredCircularProgressIndicator(modifier = Modifier.padding(16.dp))
-        }
-        value.error != null -> {
-            Text(text = "Error: ${value.error}")
-        }
-        else -> {
-            UserList(users = value.users) { onItemClick(it) }
-        }
-    }
+    UserList(users = value.users) { onItemClick(it) }
 }
 @Composable
 fun UserList(users: List<User>, modifier: Modifier = Modifier, onListItemClick: (User) -> Unit = {}) {

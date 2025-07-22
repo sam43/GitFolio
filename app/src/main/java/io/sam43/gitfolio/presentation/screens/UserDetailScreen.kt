@@ -55,6 +55,7 @@ import androidx.navigation.compose.rememberNavController
 import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
+import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
 import io.sam43.gitfolio.presentation.common.theme.GitFolioTheme
 import io.sam43.gitfolio.presentation.viewmodels.UserProfileDetailsViewModel
@@ -72,16 +73,11 @@ fun GithubProfileScreen(
     }
     val state = viewModel.state.collectAsState().value
     if (state.isLoading && state.error.isNullOrEmpty()) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-            CenteredCircularProgressIndicator()
-        }
+        CenteredCircularProgressIndicator()
     } else if (!state.isLoading && state.error.isNullOrEmpty()) {
         UserProfileView(state, navController)
     } else {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-            Text(text = state.error ?: "")
-        }
-        // todo:: design error screen
+        ErrorScreen(errorText = state.error ?: "")
     }
 }
 
