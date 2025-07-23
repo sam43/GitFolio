@@ -3,7 +3,7 @@
     <!-- Night theme for splash screen -->
     <style name="Theme.GitFolio.SplashScreen" parent="Theme.SplashScreen">
         <!-- Set the splash screen background color for dark mode -->
-        <item name="windowSplashScreenBackground">@color/splash_background_night</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
         <!-- Set the splash screen icon -->
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <!-- Set the duration of the animated icon animation -->

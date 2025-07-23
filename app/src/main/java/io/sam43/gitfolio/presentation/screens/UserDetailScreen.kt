@@ -1,5 +1,4 @@
 @file:OptIn(ExperimentalSharedTransitionApi::class)
-
 package io.sam43.gitfolio.presentation.screens
 
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -152,14 +151,21 @@ fun UserProfileView(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (isLoading && repositories.isEmpty()) {
-                CenteredCircularProgressIndicator()
-            } else {
-                RepoList(
-                    reposList = repositories,
-                    headerHeight = headerHeight,
-                    modifier = Modifier.fillMaxSize()
+            when {
+                isLoading -> CenteredCircularProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
                 )
+                repositories.isEmpty() -> if (user.login.isNotEmpty())
+                    ErrorScreen(error = ErrorType.ApiError(404, "No repositories found for this user."))
+                else -> {
+                    RepoList(
+                        reposList = repositories,
+                        headerHeight = headerHeight,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
 
             CollapsingToolbar(

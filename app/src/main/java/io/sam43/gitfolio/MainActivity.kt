@@ -5,7 +5,6 @@ package io.sam43.gitfolio
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -197,11 +196,6 @@ fun LandingScreen(
 
 @Composable
 fun AppMain(modifier: Modifier, navController: NavHostController, themeViewModel: ThemeViewModel) {
-    BackHandler(enabled = true) {
-        if (navController.previousBackStackEntry != null) {
-            navController.popBackStack()
-        }
-    }
     SharedTransitionLayout {
         NavHost(
             navController = navController,

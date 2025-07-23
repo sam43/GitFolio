@@ -66,4 +66,8 @@ class NetworkMonitor@Inject constructor(application: Application) {
             connectivityManager.unregisterNetworkCallback(networkCallback)
         }
     }.distinctUntilChanged() // Only emit when the status actually changes
+    fun isNetworkAvailable(): Boolean {
+        val activeNetwork = connectivityManager.activeNetworkInfo
+        return activeNetwork != null && activeNetwork.isConnected
+    }
 }

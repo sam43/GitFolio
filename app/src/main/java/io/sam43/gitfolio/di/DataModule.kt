@@ -10,7 +10,6 @@ import io.sam43.gitfolio.BuildConfig
 import io.sam43.gitfolio.data.remote.ApiService
 import io.sam43.gitfolio.data.repository.UserRepositoryImpl
 import io.sam43.gitfolio.domain.repository.UserRepository
-import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -21,17 +20,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DataModule {
-
-    @Provides
-    @Singleton
-    fun provideOkhttpCache(@ApplicationContext context: Context): Cache {
-        val cacheSize = 30L * 1024 * 1024 // 30 MB
-        val cacheDir = context.cacheDir.resolve("gitfolio_cache")
-        return Cache(
-            directory = cacheDir,
-            maxSize = cacheSize
-        )
-    }
 
     @Provides
     @Singleton
@@ -48,16 +36,26 @@ object DataModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(
-        okhttpCache: Cache,
+        @ApplicationContext context: Context,
         loggingInterceptor: HttpLoggingInterceptor
     ): OkHttpClient {
-        return OkHttpClient.Builder()
-            .cache(okhttpCache)
-            .addInterceptor(loggingInterceptor)
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .addHeader("Authorization", BuildConfig.GITHUB_API_TOKEN)
+                    .addHeader("X-GitHub-Api-Version", "2022-11-28")
+                    .build()
+                chain.proceed(request)
+            }
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
+
+        if (BuildConfig.DEBUG) {
+            okHttpClient.addInterceptor(loggingInterceptor)
+        }
+
+        return okHttpClient.build()
     }
 
     @Provides

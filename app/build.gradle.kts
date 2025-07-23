@@ -18,6 +18,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField ("String", "GITHUB_API_TOKEN", "\"${properties["GITHUB_API_TOKEN"]}\"")
     }
 
     buildTypes {
@@ -48,6 +49,9 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+    lint {
+        baseline = file("lint-baseline.xml")
     }
 }
 
