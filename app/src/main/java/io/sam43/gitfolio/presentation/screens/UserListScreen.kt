@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,17 +49,18 @@ fun UserListScreen(
     navController: NavController,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    searchQuery: String? = "",
     viewModel: UserListViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
-
     when {
         state.isLoading && state.users.isEmpty() -> CenteredCircularProgressIndicator()
         state.error != null -> ErrorScreen(error = state.error ?: ErrorType.UnknownError())
         else -> UserList(
             userListState = state,
             sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope
+            animatedVisibilityScope = animatedVisibilityScope,
+            searchQuery = searchQuery ?: "",
         ) { user ->
             val encodedAvatarUrl = URLEncoder.encode(user.avatarUrl, StandardCharsets.UTF_8.name())
             val encodedDisplayName = URLEncoder.encode(user.login, StandardCharsets.UTF_8.name()) // Handle null name
@@ -75,10 +77,20 @@ fun UserList(
     userListState: UserListState,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    searchQuery: String,
     onItemClick: (User) -> Unit = {}
 ) {
+    val filteredUsers = remember(userListState.users, searchQuery) {
+        if (searchQuery.isBlank()) {
+            userListState.users
+        } else {
+            userListState.users.filter { user ->
+                user.login.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
     LazyColumn {
-        items(userListState.users, key = { user -> user.id }) { user ->
+        items(filteredUsers, key = { user -> user.login }) { user ->
             UserListItem(
                 user = user,
                 sharedTransitionScope = sharedTransitionScope,

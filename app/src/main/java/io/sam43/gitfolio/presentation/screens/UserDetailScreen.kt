@@ -127,7 +127,6 @@ fun UserProfileView(
     animatedVisibilityScope: AnimatedVisibilityScope
 ) {
     val headerHeight = 280.dp
-    val toolbarHeight = 64.dp
 
     val headerHeightPx = with(LocalDensity.current) { headerHeight.toPx() }
 
@@ -179,7 +178,6 @@ fun UserProfileView(
 
             CollapsingTopBar(
                 user = user,
-                toolbarHeight = toolbarHeight,
                 headerHeight = headerHeight,
                 offset = headerOffsetHeightPx.floatValue
             )
@@ -231,7 +229,7 @@ fun CollapsingToolbar(
                     }
             )
             Spacer(Modifier.height(16.dp))
-            Text(user.name ?: "---",
+            Text("@${user.login}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -245,7 +243,7 @@ fun CollapsingToolbar(
                     }
             )
             Text(
-                "@${user.login}",
+                user.name ?: "---",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.graphicsLayer { alpha = 1f - collapseFraction * 2 }
@@ -263,7 +261,7 @@ fun CollapsingToolbar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CollapsingTopBar(user: UserDetail, toolbarHeight: Dp, headerHeight: Dp, offset: Float) {
+fun CollapsingTopBar(user: UserDetail, headerHeight: Dp, offset: Float) {
     val headerHeightPx = with(LocalDensity.current) { headerHeight.toPx() }
     val collapseThreshold = headerHeightPx * 0.7f
 

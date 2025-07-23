@@ -186,7 +186,12 @@ fun LandingScreen(
             modifier = Modifier
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         )
-        UserListScreen(navController, sharedTransitionScope, animatedVisibilityScope)
+        UserListScreen(
+            navController = navController,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+            searchQuery = searchQuery
+        )
     }
 }
 
