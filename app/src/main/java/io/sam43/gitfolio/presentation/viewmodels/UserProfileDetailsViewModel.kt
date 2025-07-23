@@ -6,8 +6,8 @@ import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.domain.usecases.GetUserDetailsUseCase
 import io.sam43.gitfolio.domain.usecases.GetUserRepositoriesUseCase
+import io.sam43.gitfolio.presentation.state.UserProfileState
 import io.sam43.gitfolio.utils.ErrorType
-import io.sam43.gitfolio.utils.NETWORK_ERROR_MESSAGE
 import io.sam43.gitfolio.utils.NetworkMonitor
 import io.sam43.gitfolio.utils.Result
 import kotlinx.coroutines.async
@@ -19,12 +19,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class UserProfileState(
-    val repositories: List<Repo> = emptyList(),
-    val user: UserDetail? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
 
 @HiltViewModel
 class UserProfileDetailsViewModel @Inject constructor(
@@ -39,12 +33,12 @@ class UserProfileDetailsViewModel @Inject constructor(
         monitorNetworkChanges(
             onConnectedAction = {},
             onDisconnectedAction = {
-                _state.update { it.copy(error = NETWORK_ERROR_MESSAGE, isLoading = false) }
+                _state.update { it.copy(error = ErrorType.NetworkError, isLoading = false) }
             }
         )
     }
 
-    private fun fetchUserProfileDetails(userName: String) {
+    fun fetchUserProfileDetails(userName: String) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             try {
@@ -84,14 +78,14 @@ class UserProfileDetailsViewModel @Inject constructor(
                             user = finalUser,
                             repositories = finalRepos,
                             isLoading = false,
-                            error = errors.joinToString("; ") { error -> error.toString() }
+                            error = ErrorType.UnknownError(errors.joinToString("; ") { error -> error.toString() })
                         )
                     }
                 }
 
             } catch (e: Exception) {
                 _state.value = UserProfileState(
-                    error = e.message,
+                    error = ErrorType.UnknownError(e.message.toString()),
                     isLoading = false
                 )
             }

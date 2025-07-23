@@ -60,6 +60,7 @@ import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
 import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
 import io.sam43.gitfolio.presentation.viewmodels.UserProfileDetailsViewModel
+import io.sam43.gitfolio.utils.ErrorType
 import io.sam43.gitfolio.utils.toFormattedCountString
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -101,7 +102,7 @@ fun GithubProfileScreen(
     }
 
     if (state.error != null && state.user == null) { // Show error only if full load fails
-        ErrorScreen(errorText = state.error ?: "")
+        ErrorScreen(error = state.error ?: ErrorType.UnknownError())
     } else if (state.isLoading && displayUserForTransition == null) {
         CenteredCircularProgressIndicator()
     } else if (displayUserForTransition != null) {

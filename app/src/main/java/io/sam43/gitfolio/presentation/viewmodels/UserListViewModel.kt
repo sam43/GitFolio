@@ -2,8 +2,8 @@ package io.sam43.gitfolio.presentation.viewmodels
 
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.domain.usecases.GetUserListUseCase
+import io.sam43.gitfolio.presentation.state.UserListState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,12 +12,6 @@ import javax.inject.Inject
 import io.sam43.gitfolio.utils.Result
 import io.sam43.gitfolio.utils.NetworkMonitor
 import kotlinx.coroutines.flow.collectLatest
-
-data class UserListState(
-    val users: List<User> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
 
 @HiltViewModel
 class UserListViewModel @Inject constructor(
@@ -34,7 +28,7 @@ class UserListViewModel @Inject constructor(
         )
     }
     
-    private fun fetchUsers() {
+    fun fetchUsers() {
         viewModelScope.launch {
             useCase().collectLatest { result ->
                 when (result) {
@@ -49,7 +43,7 @@ class UserListViewModel @Inject constructor(
                     }
                     is Result.Error -> {
                         _state.value = UserListState(
-                            error = result.errorType.toString(),
+                            error = result.errorType,
                             isLoading = false
                         )
                     }
@@ -75,7 +69,7 @@ class UserListViewModel @Inject constructor(
 
                     is Result.Error -> {
                         _state.value = UserListState(
-                            error = result.errorType.toString(),
+                            error = result.errorType,
                             isLoading = false
                         )
                     }

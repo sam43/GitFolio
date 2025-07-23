@@ -13,6 +13,7 @@ class GetUserListUseCase @Inject constructor(
         return if (query.isNullOrBlank()) {
             userRepository.getUsers()
         } else {
+            // todo:: filter it offline for better performance
             userRepository.searchUsers(query)
         }
     }

@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import io.sam43.gitfolio.utils.ErrorType
 
 
 @Composable
@@ -45,11 +46,11 @@ fun String.LoadImageWith(
 
 
 @Composable
-fun ErrorScreen(errorText: String) {
+fun ErrorScreen(error: ErrorType) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier.fillMaxSize()
     ) {
-        Text(text = errorText, color = Color.Red)
+        Text(text = error.toString(), color = Color.Red)
     }
 }

@@ -44,13 +44,13 @@ class NetworkMonitor@Inject constructor(application: Application) {
         }
         val currentNetwork = connectivityManager.activeNetwork
         if (currentNetwork == null) {
-            launch { send(NetworkStatus.Unavailable) }
+            send(NetworkStatus.Unavailable)
         } else {
             val capabilities = connectivityManager.getNetworkCapabilities(currentNetwork)
             if (capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
-                launch { send(NetworkStatus.Available) }
+                send(NetworkStatus.Available)
             } else {
-                launch { send(NetworkStatus.IncapableOfInternetConnection) }
+                send(NetworkStatus.IncapableOfInternetConnection)
             }
         }
 

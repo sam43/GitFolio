@@ -37,8 +37,9 @@ import io.sam43.gitfolio.presentation.common.AppNavigation.Companion.USER_PROFIL
 import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
 import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
-import io.sam43.gitfolio.presentation.viewmodels.UserListState
+import io.sam43.gitfolio.presentation.state.UserListState
 import io.sam43.gitfolio.presentation.viewmodels.UserListViewModel
+import io.sam43.gitfolio.utils.ErrorType
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -53,7 +54,7 @@ fun UserListScreen(
 
     when {
         state.isLoading && state.users.isEmpty() -> CenteredCircularProgressIndicator()
-        state.error != null -> ErrorScreen(errorText = state.error ?: "")
+        state.error != null -> ErrorScreen(error = state.error ?: ErrorType.UnknownError())
         else -> UserList(
             userListState = state,
             sharedTransitionScope = sharedTransitionScope,
