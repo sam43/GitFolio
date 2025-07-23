@@ -1,5 +1,6 @@
 package io.sam43.retrofitcache.interceptor
 
+import android.util.Log
 import io.sam43.retrofitcache.annotation.CacheControl
 import io.sam43.retrofitcache.cache.LruCacheManager
 import okhttp3.Interceptor
@@ -44,7 +45,6 @@ class CacheInterceptor(
     
     companion object {
         private const val CACHE_HIT_HEADER = "X-Cache"
-        private const val CACHE_AGE_HEADER = "X-Cache-Age"
         private const val CACHE_TTL_HEADER = "X-Cache-TTL"
     }
     
@@ -118,6 +118,7 @@ class CacheInterceptor(
             digest.joinToString("") { "%02x".format(it) }
         } catch (e: Exception) {
             // Fallback to simple hash if MD5 is not available
+            Log.w("CacheInterceptor", "MD5 generation failed, using hashCode fallback", e)
             keyString.hashCode().toString()
         }
     }
@@ -139,8 +140,7 @@ class CacheInterceptor(
         
         if (enableDebugHeaders) {
             responseBuilder.addHeader(CACHE_HIT_HEADER, "HIT")
-            
-            // Add cache age and TTL headers for debugging
+
             responseBuilder.addHeader(CACHE_TTL_HEADER, cacheControl.maxAge.toString())
 
         }

@@ -14,6 +14,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
+import io.sam43.gitfolio.BuildConfig
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -23,7 +24,7 @@ object DataModule {
     @Singleton
     fun provideRetrofitCacheManager(): RetrofitCacheManager {
         return RetrofitCacheManager.builder()
-            .maxCacheSize(200)           // Cache up to 200 entries
+            .maxCacheSize(500)           // Cache up to 200 entries
             .enableDebugHeaders(true)    // Add debug headers for development
             .build()
     }
@@ -32,7 +33,11 @@ object DataModule {
     @Singleton
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor {
         return HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+                } else {
+                    HttpLoggingInterceptor.Level.BASIC
+                }
         }
     }
 

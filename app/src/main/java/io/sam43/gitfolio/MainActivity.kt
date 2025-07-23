@@ -21,13 +21,13 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val appInstance: App?
-        get() = applicationContext as? App
+    private val appInstance: App
+        get() = applicationContext as App
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         lifecycleScope.launch {
-            appInstance?.networkUiEvents?.collectLatest { event ->
+            appInstance.networkUiEvents.collectLatest { event ->
                 when (event) {
                     is NetworkUiEvent.ShowToast -> {
                         Toast.makeText(this@MainActivity, event.message, Toast.LENGTH_LONG).show()

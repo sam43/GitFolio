@@ -6,7 +6,6 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -22,7 +21,7 @@ sealed class NetworkStatus {
 }
 
 @Singleton
-class NetworkMonitor@Inject constructor(@ApplicationContext private val application: Application) {
+class NetworkMonitor@Inject constructor(application: Application) {
     private val connectivityManager =
         application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
