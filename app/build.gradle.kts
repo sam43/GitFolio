@@ -73,6 +73,8 @@ dependencies {
     implementation(libs.retrofit.converter.moshi)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
+    // Retrofit Cache Library
+    implementation(project(":retrofit-cache"))
 
     // Moshi
     implementation(libs.moshi)

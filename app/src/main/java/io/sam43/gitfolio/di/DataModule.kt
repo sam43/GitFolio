@@ -10,6 +10,9 @@ import io.sam43.gitfolio.BuildConfig
 import io.sam43.gitfolio.data.remote.ApiService
 import io.sam43.gitfolio.data.repository.UserRepositoryImpl
 import io.sam43.gitfolio.domain.repository.UserRepository
+import io.sam43.retrofitcache.RetrofitCacheManager
+import io.sam43.retrofitcache.cache.LruCacheManager
+import io.sam43.retrofitcache.interceptor.CacheInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -21,6 +24,23 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DataModule {
 
+
+    @Provides
+    @Singleton
+    fun provideLruCacheManager(@ApplicationContext context: Context): LruCacheManager {
+        return LruCacheManager(context, maxSize = 500, defaultMaxAge = TimeUnit.HOURS.toMillis(1))
+    }
+
+    @Provides
+    @Singleton
+    fun provideCacheInterceptor(lruCacheManager: LruCacheManager): CacheInterceptor {
+        return CacheInterceptor(lruCacheManager)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRetrofitCacheManager(interceptor: CacheInterceptor, cacheManager: LruCacheManager): RetrofitCacheManager =
+        RetrofitCacheManager(interceptor,cacheManager)
     @Provides
     @Singleton
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor {
@@ -36,7 +56,7 @@ object DataModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(
-        @ApplicationContext context: Context,
+        retrofitCacheManager: RetrofitCacheManager,
         loggingInterceptor: HttpLoggingInterceptor
     ): OkHttpClient {
         val okHttpClient = OkHttpClient.Builder()
@@ -47,6 +67,7 @@ object DataModule {
                     .build()
                 chain.proceed(request)
             }
+            .addInterceptor(retrofitCacheManager.getInterceptor())
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
