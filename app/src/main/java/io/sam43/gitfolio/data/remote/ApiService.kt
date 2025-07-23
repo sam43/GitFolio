@@ -20,8 +20,6 @@ interface ApiService {
 
     @GET("/users/{username}/repos")
     suspend fun getUserRepos(
-        @Path("username") username: String,
-        @Query("type") type: String = "owner",
-        @Query("sort") sort: String = "updated"
+        @Path("username") username: String
     ): Response<List<Repo>>
 }
