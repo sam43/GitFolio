@@ -48,17 +48,18 @@ fun UserListScreen(
     navController: NavController,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    searchQuery: String? = "",
     viewModel: UserListViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
-
     when {
         state.isLoading && state.users.isEmpty() -> CenteredCircularProgressIndicator()
         state.error != null -> ErrorScreen(error = state.error ?: ErrorType.UnknownError())
         else -> UserList(
             userListState = state,
             sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope
+            animatedVisibilityScope = animatedVisibilityScope,
+            searchQuery = searchQuery ?: "",
         ) { user ->
             val encodedAvatarUrl = URLEncoder.encode(user.avatarUrl, StandardCharsets.UTF_8.name())
             val encodedDisplayName = URLEncoder.encode(user.login, StandardCharsets.UTF_8.name()) // Handle null name
@@ -75,10 +76,11 @@ fun UserList(
     userListState: UserListState,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    searchQuery: String,
     onItemClick: (User) -> Unit = {}
 ) {
     LazyColumn {
-        items(userListState.users, key = { user -> user.id }) { user ->
+        items(userListState.users.filter { user -> user.login.contains(searchQuery, ignoreCase = true) }, key = { user -> user.login }) { user ->
             UserListItem(
                 user = user,
                 sharedTransitionScope = sharedTransitionScope,
