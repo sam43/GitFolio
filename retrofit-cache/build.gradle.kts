@@ -41,7 +41,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.10.1")
     
     // Networking - these will be provided by the consuming app
-    api("com.squareup.retrofit2:retrofit:2.9.0")
+    api("com.squareup.retrofit2:retrofit:3.0.0")
     api("com.squareup.okhttp3:okhttp:4.12.0")
     
     // Coroutines

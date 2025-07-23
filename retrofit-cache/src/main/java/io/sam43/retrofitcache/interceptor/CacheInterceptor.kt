@@ -29,6 +29,10 @@ class CacheInterceptor(
         val invocation = request.tag(Invocation::class.java)
         val cacheControl = invocation?.method()?.getAnnotation(CacheControl::class.java)
 
+        // Add logging to check if invocation and cacheControl are null
+        println("CacheInterceptor: Invocation tag: $invocation")
+        println("CacheInterceptor: CacheControl annotation: $cacheControl")
+
         if (cacheControl != null) {
             val cacheKey = generateCacheKey(request)
 

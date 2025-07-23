@@ -62,7 +62,9 @@ object DataModule {
         val okHttpClient = OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
-                    .addHeader("Authorization", BuildConfig.GITHUB_API_TOKEN)
+                    .addHeader("Authorization", "token ${BuildConfig.GITHUB_API_TOKEN}")
+                    .addHeader("Accept", "application/vnd.github.v3+json")
+                    .addHeader("Cache-Control", "public, max-age=3600")
                     .addHeader("X-GitHub-Api-Version", "2022-11-28")
                     .build()
                 chain.proceed(request)
@@ -83,7 +85,7 @@ object DataModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.github.com")
+            .baseUrl("https://api.github.com/")
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create())
             .build()

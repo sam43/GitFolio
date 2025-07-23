@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.common.truth.Truth.assertThat
 import io.mockk.every
 import io.mockk.mockk
+import io.sam43.retrofitcache.annotation.CacheControl
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -11,8 +12,18 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import retrofit2.Invocation.Factory
 import retrofit2.Retrofit
 import retrofit2.converter.scalars.ScalarsConverterFactory
+import retrofit2.http.GET
+import java.io.File
+
+// Define a simple TestApiService for testing purposes
+interface TestApiService {
+    @CacheControl(maxAge = 60) // Cache for 60 seconds
+    @GET("/cached-data")
+    suspend fun getCachedData(): String
+}
 
 class RetrofitCacheManagerTest {
 
@@ -20,6 +31,7 @@ class RetrofitCacheManagerTest {
     private lateinit var apiService: TestApiService
     private lateinit var cacheManager: RetrofitCacheManager
     private lateinit var mockContext: Context
+    private lateinit var tempCacheDir: File
 
     @Before
     fun setUp() {
@@ -27,7 +39,8 @@ class RetrofitCacheManagerTest {
         server.start()
 
         mockContext = mockk<Context>()
-        every { mockContext.cacheDir } returns createTempDir()
+        tempCacheDir = createTempDir()
+        every { mockContext.cacheDir } returns tempCacheDir
 
         cacheManager = RetrofitCacheManager.Builder(mockContext)
             .maxCacheSize(10)
@@ -41,6 +54,7 @@ class RetrofitCacheManagerTest {
             .baseUrl(server.url("/"))
             .client(client)
             .addConverterFactory(ScalarsConverterFactory.create())
+            .addCallAdapterFactory(Invocation.Factory.create()) // Crucial for annotation passing
             .build()
 
         apiService = retrofit.create(TestApiService::class.java)
@@ -49,6 +63,7 @@ class RetrofitCacheManagerTest {
     @After
     fun tearDown() {
         server.shutdown()
+        tempCacheDir.deleteRecursively() // Clean up the temporary cache directory
     }
 
     @Test
