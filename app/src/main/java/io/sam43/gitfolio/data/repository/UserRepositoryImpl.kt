@@ -9,14 +9,12 @@ import io.sam43.gitfolio.utils.AppException
 import io.sam43.gitfolio.utils.ErrorHandler
 import io.sam43.gitfolio.utils.ErrorType
 import io.sam43.gitfolio.utils.Result
-import io.sam43.retrofitcache.RetrofitCacheManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
-    private val apiService: ApiService,
-    private val cacheManager: RetrofitCacheManager
+    private val apiService: ApiService
 ) : UserRepository {
     override suspend fun getUsers(): Flow<Result<List<User>>> = flow {
         try {
@@ -81,30 +79,4 @@ class UserRepositoryImpl @Inject constructor(
             emit(Result.Error(ErrorHandler.handleError(e)))
         }
     }
-    
-    /**
-     * Clear all cached data. Useful for refresh operations or logout.
-     */
-    internal fun clearCache() {
-        cacheManager.clearAllCache()
-    }
-    
-    /**
-     * Clean up expired cache entries to free up memory.
-     */
-    internal fun cleanupExpiredCache() {
-        cacheManager.cleanupExpiredCache()
-    }
-    
-    /**
-     * Get current cache size for debugging or monitoring purposes.
-     */
-    internal fun getCacheSize(): Int {
-        return cacheManager.getCacheSize()
-    }
-    
-    /**
-     * Get cache statistics for monitoring.
-     */
-    internal fun getCacheStats() = cacheManager.getCacheStats()
 }

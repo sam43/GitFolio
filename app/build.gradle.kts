@@ -63,9 +63,6 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.google.material)
     
-    // Retrofit Cache Library
-    implementation(project(":retrofit-cache"))
-    
     // Networking
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.moshi)

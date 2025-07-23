@@ -1,20 +1,22 @@
 package io.sam43.gitfolio.di
 
+import android.content.Context
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.sam43.gitfolio.BuildConfig
 import io.sam43.gitfolio.data.remote.ApiService
 import io.sam43.gitfolio.data.repository.UserRepositoryImpl
 import io.sam43.gitfolio.domain.repository.UserRepository
-import io.sam43.retrofitcache.RetrofitCacheManager
+import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
-import io.sam43.gitfolio.BuildConfig
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -22,11 +24,13 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideRetrofitCacheManager(): RetrofitCacheManager {
-        return RetrofitCacheManager.builder()
-            .maxCacheSize(500)           // Cache up to 200 entries
-            .enableDebugHeaders(true)    // Add debug headers for development
-            .build()
+    fun provideOkhttpCache(@ApplicationContext context: Context): Cache {
+        val cacheSize = 30L * 1024 * 1024 // 30 MB
+        val cacheDir = context.cacheDir.resolve("gitfolio_cache")
+        return Cache(
+            directory = cacheDir,
+            maxSize = cacheSize
+        )
     }
 
     @Provides
@@ -44,11 +48,11 @@ object DataModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(
-        cacheManager: RetrofitCacheManager,
+        okhttpCache: Cache,
         loggingInterceptor: HttpLoggingInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
-            .addInterceptor(cacheManager.getInterceptor()) // Add cache interceptor
+            .cache(okhttpCache)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)

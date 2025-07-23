@@ -6,7 +6,6 @@ import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.utils.AppException
 import io.sam43.gitfolio.utils.ErrorType
 import io.sam43.gitfolio.utils.Result
-import io.sam43.retrofitcache.RetrofitCacheManager
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -18,13 +17,11 @@ class UserRepositoryImplTest {
 
     private lateinit var userRepository: UserRepositoryImpl
     private lateinit var apiService: ApiService
-    private lateinit var cacheManager: RetrofitCacheManager
 
     @Before
     fun setUp() {
         apiService = mockk()
-        cacheManager = mockk(relaxed = true)
-        userRepository = UserRepositoryImpl(apiService, cacheManager)
+        userRepository = UserRepositoryImpl(apiService)
     }
 
     @Test
