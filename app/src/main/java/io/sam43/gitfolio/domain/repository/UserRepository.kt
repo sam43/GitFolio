@@ -3,7 +3,7 @@ package io.sam43.gitfolio.domain.repository
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.domain.model.Repo
-import io.sam43.gitfolio.utils.Result
+import io.sam43.gitfolio.data.helper.Result
 import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {

@@ -60,7 +60,7 @@ import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
 import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
 import io.sam43.gitfolio.presentation.viewmodels.UserProfileDetailsViewModel
-import io.sam43.gitfolio.utils.ErrorType
+import io.sam43.gitfolio.data.helper.ErrorType
 import io.sam43.gitfolio.utils.toFormattedCountString
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -231,7 +231,7 @@ fun CollapsingToolbar(
                     }
             )
             Spacer(Modifier.height(16.dp))
-            Text(user.name ?: "---",
+            Text("@${user.login}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -245,7 +245,7 @@ fun CollapsingToolbar(
                     }
             )
             Text(
-                "@${user.login}",
+                user.name ?: "---",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.graphicsLayer { alpha = 1f - collapseFraction * 2 }
@@ -281,7 +281,7 @@ fun CollapsingTopBar(user: UserDetail, toolbarHeight: Dp, headerHeight: Dp, offs
                         .clip(CircleShape)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(user.name ?: "", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                Text(user.login, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
             }
         },
         actions = {

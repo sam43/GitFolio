@@ -5,7 +5,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import io.sam43.gitfolio.utils.NetworkMonitor
+import io.sam43.gitfolio.data.helper.NetworkMonitor
 import javax.inject.Singleton
 
 @Module

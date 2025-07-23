@@ -3,8 +3,8 @@ package io.sam43.gitfolio
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 import io.sam43.gitfolio.presentation.common.NetworkUiEvent
-import io.sam43.gitfolio.utils.NetworkMonitor
-import io.sam43.gitfolio.utils.NetworkStatus
+import io.sam43.gitfolio.data.helper.NetworkMonitor
+import io.sam43.gitfolio.data.helper.NetworkStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

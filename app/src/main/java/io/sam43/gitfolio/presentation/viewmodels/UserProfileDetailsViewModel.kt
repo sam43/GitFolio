@@ -2,19 +2,24 @@ package io.sam43.gitfolio.presentation.viewmodels
 
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.sam43.gitfolio.data.helper.ErrorType
+import io.sam43.gitfolio.data.helper.NetworkMonitor
+import io.sam43.gitfolio.data.helper.handleDataResult
+import io.sam43.gitfolio.data.helper.handleListResult
 import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.domain.usecases.GetUserDetailsUseCase
 import io.sam43.gitfolio.domain.usecases.GetUserRepositoriesUseCase
+import io.sam43.gitfolio.presentation.state.DataState
+import io.sam43.gitfolio.presentation.state.ListState
 import io.sam43.gitfolio.presentation.state.UserProfileState
-import io.sam43.gitfolio.utils.ErrorType
-import io.sam43.gitfolio.utils.NetworkMonitor
-import io.sam43.gitfolio.utils.Result
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -25,74 +30,47 @@ class UserProfileDetailsViewModel @Inject constructor(
     private val getProfileUseCase: GetUserDetailsUseCase,
     private val getRepositoryUseCase: GetUserRepositoriesUseCase,
     networkMonitor: NetworkMonitor
-) : ParentViewModel(networkMonitor) {
-    private val _state = MutableStateFlow(UserProfileState(isLoading = true))
-    val state: StateFlow<UserProfileState> = _state.asStateFlow()
+) : ParentViewModel<UserDetail>(networkMonitor) {
+    private val _combinedError = MutableStateFlow<ErrorType?>(ErrorType.UnknownError())
+    private val _userState = MutableStateFlow(DataState<UserDetail>())
+    private val _repositoriesState = MutableStateFlow(ListState<Repo>())
 
-    init {
-        monitorNetworkChanges(
-            onConnectedAction = {},
-            onDisconnectedAction = {
-                _state.update { it.copy(error = ErrorType.NetworkError, isLoading = false) }
-            }
+    val state: StateFlow<UserProfileState> = combine(
+        _userState,
+        _repositoriesState
+    ) { userState, repoState ->
+        _combinedError.update { userState.error ?: repoState.error }
+        UserProfileState(
+            userState = userState,
+            repositoriesState = repoState,
+            errorCombined = _combinedError.value
         )
-    }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, UserProfileState())
 
-    fun fetchUserProfileDetails(userName: String) {
+    private fun fetchUserProfileDetails(userName: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
             try {
-                val profileDeferred = async { getProfileUseCase.invoke(userName).first() }
-                val reposDeferred = async { getRepositoryUseCase.invoke(userName).first() }
-
-                val profileResult: Result<UserDetail> = profileDeferred.await()
-                val reposResult: Result<List<Repo>> = reposDeferred.await()
-                var finalUser: UserDetail? = null
-                var finalRepos: List<Repo> = emptyList()
-                val errors = mutableListOf<ErrorType>()
-                
-                when(profileResult) {
-                    is Result.Success -> finalUser = profileResult.data
-                    is Result.Error -> profileResult.errorType.let { errors.add(it) }
-                    else -> {}
-                }
-
-                when(reposResult) {
-                    is Result.Success -> finalRepos = reposResult.data
-                    is Result.Error -> reposResult.errorType.let { errors.add(it) }
-                    else -> {}
-                }
-
-                if (errors.isEmpty()) {
-                    _state.update {
-                        it.copy(
-                            user = finalUser,
-                            repositories = finalRepos,
-                            isLoading = false,
-                            error = null
-                        )
-                    }
-                } else {
-                    _state.update {
-                        it.copy(
-                            user = finalUser,
-                            repositories = finalRepos,
-                            isLoading = false,
-                            error = ErrorType.UnknownError(errors.joinToString("; ") { error -> error.toString() })
-                        )
+                val profileDeferred = async {
+                    getProfileUseCase.invoke(userName).collectLatest { result ->
+                        _userState.handleDataResult(result)
                     }
                 }
+                val reposDeferred = async {
+                    getRepositoryUseCase.invoke(userName).collectLatest { result ->
+                        _repositoriesState.handleListResult(result)
+                    }
+                }
+
+                profileDeferred.await()
+                reposDeferred.await()
 
             } catch (e: Exception) {
-                _state.value = UserProfileState(
-                    error = ErrorType.UnknownError(e.message.toString()),
-                    isLoading = false
-                )
+                _combinedError.value = ErrorType.UnknownError(e.message.toString().plus("during catch"))
             }
         }
     }
 
-    fun fetchUserProfileByUsername(username: String) {
-        fetchUserProfileDetails(username)
+    fun fetchUserProfileByUsername(username: String? = null) {
+        fetchUserProfileDetails(username ?: "")
     }
 }

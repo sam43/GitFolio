@@ -4,8 +4,8 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.domain.repository.UserRepository
-import io.sam43.gitfolio.utils.ErrorType
-import io.sam43.gitfolio.utils.Result
+import io.sam43.gitfolio.data.helper.ErrorType
+import io.sam43.gitfolio.data.helper.Result
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest

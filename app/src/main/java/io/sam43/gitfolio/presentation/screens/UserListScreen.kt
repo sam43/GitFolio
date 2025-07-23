@@ -37,9 +37,9 @@ import io.sam43.gitfolio.presentation.common.AppNavigation.Companion.USER_PROFIL
 import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
 import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
-import io.sam43.gitfolio.presentation.state.UserListState
+import io.sam43.gitfolio.presentation.state.ListState
 import io.sam43.gitfolio.presentation.viewmodels.UserListViewModel
-import io.sam43.gitfolio.utils.ErrorType
+import io.sam43.gitfolio.data.helper.ErrorType
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -53,10 +53,10 @@ fun UserListScreen(
     val state by viewModel.state.collectAsState()
 
     when {
-        state.isLoading && state.users.isEmpty() -> CenteredCircularProgressIndicator()
+        state.isLoading && state.items.isEmpty() -> CenteredCircularProgressIndicator()
         state.error != null -> ErrorScreen(error = state.error ?: ErrorType.UnknownError())
         else -> UserList(
-            userListState = state,
+            listState = state,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope
         ) { user ->
@@ -72,13 +72,13 @@ fun UserListScreen(
 
 @Composable
 fun UserList(
-    userListState: UserListState,
+    listState: ListState<User>,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     onItemClick: (User) -> Unit = {}
 ) {
     LazyColumn {
-        items(userListState.users, key = { user -> user.id }) { user ->
+        items(listState.items, key = { user -> user.id }) { user ->
             UserListItem(
                 user = user,
                 sharedTransitionScope = sharedTransitionScope,

@@ -1,4 +1,4 @@
-package io.sam43.gitfolio.utils
+package io.sam43.gitfolio.data.helper
 
 import android.app.Application
 import android.content.Context

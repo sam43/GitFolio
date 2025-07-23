@@ -22,7 +22,7 @@ fun SearchBox(
     query: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholderText: String = "Search users...",
+    placeholderText: String = "Search items...",
     elevation: Dp = 4.dp
 ) {
     Surface(

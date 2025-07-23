@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
-import io.sam43.gitfolio.utils.ErrorType
+import io.sam43.gitfolio.data.helper.ErrorType
 
 
 @Composable
