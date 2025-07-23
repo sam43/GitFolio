@@ -10,7 +10,7 @@ import javax.inject.Inject
 class GetUserRepositoriesUseCase @Inject constructor(
     private val userRepository: UserRepository
 ) {
-    suspend operator fun invoke(username: String): Flow<Result<List<Repo>>> =
+    operator fun invoke(username: String): Flow<Result<List<Repo>>> =
         userRepository.getUserRepositories(username).map { result ->
             when (result) {
                 is Result.Success -> {

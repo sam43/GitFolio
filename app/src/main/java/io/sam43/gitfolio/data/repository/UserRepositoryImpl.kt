@@ -17,7 +17,7 @@ import javax.inject.Inject
 class UserRepositoryImpl @Inject constructor(
     private val apiService: ApiService
 ) : UserRepository {
-    override suspend fun getUsers(): Flow<Result<List<User>>> = flow {
+    override fun getUsers(): Flow<Result<List<User>>> = flow {
         try {
             val response = apiService.getUsers()
             if (response.isSuccessful) {
@@ -32,7 +32,7 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchUsers(query: String): Flow<Result<List<User>>> = flow {
+    override fun searchUsers(query: String): Flow<Result<List<User>>> = flow {
         if (query.isEmpty()) {
             emit(Result.Error(ErrorType.SearchQueryError))
             return@flow
@@ -51,7 +51,7 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getUserDetails(username: String): Flow<Result<UserDetail>> = flow {
+    override fun getUserDetails(username: String): Flow<Result<UserDetail>> = flow {
         val response = apiService.getUser(username)
         if (response.isSuccessful) {
             response.body()?.let { userDetail ->
@@ -64,7 +64,7 @@ class UserRepositoryImpl @Inject constructor(
         emit(Result.Error(ErrorHandler.handleError(e as Exception)))
     }
 
-    override suspend fun getUserRepositories(username: String): Flow<Result<List<Repo>>> = flow {
+    override fun getUserRepositories(username: String): Flow<Result<List<Repo>>> = flow {
         val response = apiService.getUserRepos(username)
         if (response.isSuccessful) {
             response.body()?.let { repos ->

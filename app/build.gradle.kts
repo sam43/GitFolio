@@ -73,8 +73,6 @@ dependencies {
     // Moshi
     implementation(libs.moshi)
     implementation(libs.moshi.adapters)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.junit.jupiter)
     ksp(libs.moshi.codegen)
     
     // Image loading
