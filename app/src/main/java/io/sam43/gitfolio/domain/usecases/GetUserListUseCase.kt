@@ -6,13 +6,14 @@ import io.sam43.gitfolio.utils.Result
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class FetchUserUseCase @Inject constructor(
+class GetUserListUseCase @Inject constructor(
     private val userRepository: UserRepository
 ) {
     suspend operator fun invoke(query: String? = null): Flow<Result<List<User>>> {
         return if (query.isNullOrBlank()) {
             userRepository.getUsers()
         } else {
+            // todo:: filter it offline for better performance
             userRepository.searchUsers(query)
         }
     }

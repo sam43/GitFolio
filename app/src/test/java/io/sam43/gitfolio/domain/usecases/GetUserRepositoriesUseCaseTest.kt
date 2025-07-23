@@ -39,10 +39,7 @@ class GetUserRepositoriesUseCaseTest {
                 stargazersCount = 80,
                 forksCount = 9,
                 openIssuesCount = 0,
-                fork = false,
-                createdAt = "2011-01-26T19:06:43Z",
-                updatedAt = "2011-01-26T19:06:43Z",
-                pushedAt = "2011-01-26T19:06:43Z"
+                fork = false
             )
         )
         
@@ -103,10 +100,7 @@ class GetUserRepositoriesUseCaseTest {
                 stargazersCount = 80,
                 forksCount = 9,
                 openIssuesCount = 0,
-                fork = false,
-                createdAt = "2011-01-26T19:06:43Z",
-                updatedAt = "2011-01-26T19:06:43Z",
-                pushedAt = "2011-01-26T19:06:43Z"
+                fork = false
             ),
             Repo(
                 id = 2,
@@ -118,10 +112,7 @@ class GetUserRepositoriesUseCaseTest {
                 stargazersCount = 5,
                 forksCount = 0,
                 openIssuesCount = 1,
-                fork = true,
-                createdAt = "2011-01-26T19:06:43Z",
-                updatedAt = "2011-01-26T19:06:43Z",
-                pushedAt = "2011-01-26T19:06:43Z"
+                fork = true
             )
         )
         
@@ -136,10 +127,7 @@ class GetUserRepositoriesUseCaseTest {
                 stargazersCount = 80,
                 forksCount = 9,
                 openIssuesCount = 0,
-                fork = false,
-                createdAt = "2011-01-26T19:06:43Z",
-                updatedAt = "2011-01-26T19:06:43Z",
-                pushedAt = "2011-01-26T19:06:43Z"
+                fork = false
             )
         )
         

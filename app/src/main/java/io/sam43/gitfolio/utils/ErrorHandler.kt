@@ -7,22 +7,46 @@ const val EMPTY_BODY_MESSAGE = "Received empty response from server."
 const val SEARCH_QUERY_ERROR_MESSAGE = "Search query cannot be empty."
 const val UNKNOWN_ERROR_MESSAGE = "An unknown error occurred."
 const val NETWORK_ERROR_MESSAGE = "Network error. Please check your internet connection."
+
 sealed class ErrorType {
-    data class ApiError(val statusCode: Int, val message: String) : ErrorType()
-    data object NetworkError : ErrorType()
-    data class UnknownError(val message: String) : ErrorType()
-    data object EmptyBodyError : ErrorType()
-    data object SearchQueryError : ErrorType()
+    data class ApiError(val statusCode: Int, val message: String) : ErrorType() {
+        override fun toString(): String = "ApiError($statusCode, $message)"
+    }
+
+    data object NetworkError : ErrorType() {
+        override fun toString(): String = "NetworkError"
+    }
+
+    data class UnknownError(val message: String = UNKNOWN_ERROR_MESSAGE) : ErrorType() {
+        override fun toString(): String = message
+    }
+
+    data object EmptyBodyError : ErrorType() {
+        override fun toString(): String = "EmptyBodyError"
+    }
+
+    data object SearchQueryError : ErrorType() {
+        override fun toString(): String = "SearchQueryError"
+    }
+
+    // Add ServerError for completeness (used in tests)
+    data object ServerError : ErrorType() {
+        override fun toString(): String = "ServerError"
+    }
 }
 
 object ErrorHandler {
     fun handleError(throwable: Throwable): ErrorType {
         return when (throwable) {
-            is AppException.ApiError -> ErrorType.ApiError(throwable.statusCode, throwable.message ?: "API Error")
             is AppException.NetworkError -> ErrorType.NetworkError
             is AppException.EmptyBodyError -> ErrorType.EmptyBodyError
             is AppException.SearchQueryError -> ErrorType.SearchQueryError
-            is HttpException -> ErrorType.ApiError(throwable.code(), throwable.message())
+            is HttpException -> {
+                when (throwable.code()) {
+                    in 500..599 -> ErrorType.ServerError
+                    else -> ErrorType.ApiError(throwable.code(), throwable.message())
+                }
+            }
             is IOException -> ErrorType.NetworkError
             else -> ErrorType.UnknownError(throwable.message ?: UNKNOWN_ERROR_MESSAGE)
         }
@@ -35,6 +59,7 @@ object ErrorHandler {
             is ErrorType.UnknownError -> errorType.message
             is ErrorType.EmptyBodyError -> EMPTY_BODY_MESSAGE
             is ErrorType.SearchQueryError -> SEARCH_QUERY_ERROR_MESSAGE
+            is ErrorType.ServerError -> "Server error occurred. Please try again later."
         }
     }
 }

@@ -41,9 +41,7 @@ class GetUserDetailsUseCaseTest {
             bio = "There once was...",
             publicRepos = 2,
             followers = 20,
-            following = 0,
-            createdAt = "2008-01-14T04:33:35Z",
-            updatedAt = "2008-01-14T04:33:35Z"
+            following = 0
         )
         
         coEvery { mockUserRepository.getUserDetails(username) } returns flowOf(Result.Success(expectedUserDetail))

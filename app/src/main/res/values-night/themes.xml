@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.GitFolio" parent="android:Theme.Material.Light.NoActionBar" />
-    
-    <!-- Splash Screen Theme -->
+    <!-- Night theme for splash screen -->
     <style name="Theme.GitFolio.SplashScreen" parent="Theme.SplashScreen">
-        <!-- Set the splash screen background color -->
-        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <!-- Set the splash screen background color for dark mode -->
+        <item name="windowSplashScreenBackground">@color/splash_background_night</item>
         <!-- Set the splash screen icon -->
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <!-- Set the duration of the animated icon animation -->
