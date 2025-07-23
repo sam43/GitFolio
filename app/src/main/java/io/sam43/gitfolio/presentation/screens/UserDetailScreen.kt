@@ -231,7 +231,7 @@ fun CollapsingToolbar(
                     }
             )
             Spacer(Modifier.height(16.dp))
-            Text(user.name ?: "---",
+            Text("@${user.login}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -245,7 +245,7 @@ fun CollapsingToolbar(
                     }
             )
             Text(
-                "@${user.login}",
+                user.name ?: "---",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.graphicsLayer { alpha = 1f - collapseFraction * 2 }
