@@ -43,7 +43,7 @@ object DataModule {
         @ApplicationContext context: Context,
         loggingInterceptor: HttpLoggingInterceptor
     ): OkHttpClient {
-        val cacheSize = 10 * 1024 * 1024L // Fixed: Use Long directly
+        val cacheSize = 30 * 1024 * 1024L
         val cacheDirectory = File(context.cacheDir, "app-http-cache")
         val cache = Cache(cacheDirectory, cacheSize)
 
@@ -51,7 +51,6 @@ object DataModule {
             .cache(cache)
             .addInterceptor { chain ->
                 val originalRequest = chain.request()
-                // Add required headers
                 val requestWithHeaders = originalRequest.newBuilder()
                     .addHeader("Authorization", "token ${BuildConfig.GITHUB_API_TOKEN}")
                     .addHeader("Accept", "application/vnd.github.v3+json")
@@ -59,30 +58,23 @@ object DataModule {
                     .build()
 
                 // Modify cache control based on network availability
-                val request = if (context.isOnline()) {
-                    requestWithHeaders.newBuilder()
+                val request = when(context.isOnline()) {
+                    true -> requestWithHeaders.newBuilder()
                         .cacheControl(CacheControl.Builder().maxAge(5, TimeUnit.HOURS).build())
                         .build()
-                } else {
-                    requestWithHeaders.newBuilder()
-                        .cacheControl(
-                            CacheControl.Builder()
-                                .onlyIfCached()
-                                .maxStale(7, TimeUnit.DAYS)
-                                .build()
-                        )
-                        .build()
+                    else -> requestWithHeaders.newBuilder()
+                            .cacheControl(
+                                CacheControl.Builder()
+                                    .onlyIfCached()
+                                    .maxStale(7, TimeUnit.DAYS)
+                                    .build()
+                            )
+                            .build()
                 }
-                println("🔍 REQUEST: ${request.url}")
-                println("🔍 Cache-Control: ${request.header("Cache-Control")}")
                 chain.proceed(request)
             }
             .addInterceptor { chain ->
                 val response = chain.proceed(chain.request())
-                println("🔍 RESPONSE CODE: ${response.code}")
-                println("🔍 From Cache: ${response.cacheResponse != null}")
-                println("🔍 From Network: ${response.networkResponse != null}")
-                println("🔍 Response Cache-Control: ${response.header("Cache-Control")}")
                 // Override server cache headers to enable caching
                 response.newBuilder()
                     .header("Cache-Control", "public, max-age=${TimeUnit.HOURS.toSeconds(5)}")

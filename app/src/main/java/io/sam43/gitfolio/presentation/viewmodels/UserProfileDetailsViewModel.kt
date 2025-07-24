@@ -30,6 +30,7 @@ class UserProfileDetailsViewModel @Inject constructor(
 ) : ViewModel() {
     private val _userState = MutableStateFlow(DataUiState<UserDetail>())
     private val _repositoriesState = MutableStateFlow(ListUiState<Repo>())
+    private val _username = MutableStateFlow("")
 
     val state: StateFlow<UserProfileState> = combine(
         _userState,
@@ -42,30 +43,36 @@ class UserProfileDetailsViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), UserProfileState())
 
-    private fun fetchUserProfileDetails(userName: String) {
+    init {
         viewModelScope.launch {
-            _repositoriesState.update { it.copy(isLoading = true) }
-            try {
-                getProfileUseCase.invoke(userName).collectLatest { result ->
-                    _userState.updateWithDataResult(result)
-                }
-                getRepositoryUseCase.invoke(userName).collectLatest { result ->
-                    _repositoriesState.updateWithListResult(result)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _repositoriesState.update { currentState ->
-                    currentState.copy(
-                        isLoading = false,
-                        error = currentState.error,
-                        data = currentState.data.ifEmpty { emptyList() }
-                    )
-                }
+            _username.collectLatest { userName ->
+                fetchUserProfileDetails(userName)
+            }
+        }
+    }
+
+    private suspend fun fetchUserProfileDetails(userName: String) {
+        _repositoriesState.update { it.copy(isLoading = true) }
+        try {
+            getProfileUseCase.invoke(userName).collectLatest { result ->
+                _userState.updateWithDataResult(result)
+            }
+            getRepositoryUseCase.invoke(userName).collectLatest { result ->
+                _repositoriesState.updateWithListResult(result)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _repositoriesState.update { currentState ->
+                currentState.copy(
+                    isLoading = false,
+                    error = currentState.error,
+                    data = currentState.data.ifEmpty { emptyList() }
+                )
             }
         }
     }
 
     fun fetchUserProfileByUsername(username: String) {
-        fetchUserProfileDetails(username)
+        _username.value = username
     }
 }
