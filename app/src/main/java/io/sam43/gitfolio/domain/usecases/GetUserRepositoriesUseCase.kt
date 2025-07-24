@@ -1,5 +1,6 @@
 package io.sam43.gitfolio.domain.usecases
 
+import io.sam43.gitfolio.data.helper.ErrorType
 import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.repository.UserRepository
 import io.sam43.gitfolio.data.helper.Result
@@ -10,15 +11,6 @@ import javax.inject.Inject
 class GetUserRepositoriesUseCase @Inject constructor(
     private val userRepository: UserRepository
 ) {
-    operator fun invoke(username: String): Flow<Result<List<Repo>>> =
-        userRepository.getUserRepositories(username).map { result ->
-            when (result) {
-                is Result.Success -> {
-                    val nonForkedRepos = result.data.filter { !it.fork }
-                    Result.Success(nonForkedRepos)
-                }
-                is Result.Error -> result
-                is Result.Loading -> result
-            }
-        }
+    operator fun invoke(username: String): Flow<Result<List<Repo>, ErrorType>> =
+        userRepository.getUserRepositories(username)
 }

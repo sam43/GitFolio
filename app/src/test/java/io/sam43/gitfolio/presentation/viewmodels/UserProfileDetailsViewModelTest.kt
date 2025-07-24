@@ -217,8 +217,11 @@ class UserProfileDetailsViewModelTest {
         // Given
         val userName = "testuser"
         val exceptionMessage = "Network timeout"
+        val exception = RuntimeException(exceptionMessage)
 
-        coEvery { getProfileUseCase.invoke(userName) } throws RuntimeException(exceptionMessage)
+        coEvery { getProfileUseCase.invoke(userName) } throws exception
+        coEvery { getRepositoryUseCase.invoke(userName) } returns flowOf(Result.Success(emptyList()))
+
 
         // When
         viewModel.fetchUserProfileByUsername(userName)
@@ -245,9 +248,10 @@ class UserProfileDetailsViewModelTest {
         val userName = "testuser"
         val mockUser = mockk<UserDetail>()
         val exceptionMessage = "Repository fetch failed"
+        val exception = RuntimeException(exceptionMessage)
 
         coEvery { getProfileUseCase.invoke(userName) } returns flowOf(Result.Success(mockUser))
-        coEvery { getRepositoryUseCase.invoke(userName) } throws RuntimeException(exceptionMessage)
+        coEvery { getRepositoryUseCase.invoke(userName) } throws exception
 
         // When
         viewModel.fetchUserProfileByUsername(userName)
@@ -262,7 +266,7 @@ class UserProfileDetailsViewModelTest {
         assertEquals(null, finalState.userState.error)
 
         // But overall state should show the exception in user state (as per catch block)
-        assertEquals(ErrorType.UnknownError(exceptionMessage), finalState.userState.error)
+        assertEquals(ErrorType.UnknownError(exceptionMessage), finalState.repositoriesState.error)
     }
 
     @Test

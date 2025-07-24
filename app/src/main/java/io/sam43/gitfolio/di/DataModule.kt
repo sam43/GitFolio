@@ -50,40 +50,44 @@ object DataModule {
         return OkHttpClient.Builder()
             .cache(cache)
             .addInterceptor { chain ->
-                var request = chain.request()
-                request = request.newBuilder()
+                val originalRequest = chain.request()
+                // Add required headers
+                val requestWithHeaders = originalRequest.newBuilder()
                     .addHeader("Authorization", "token ${BuildConfig.GITHUB_API_TOKEN}")
                     .addHeader("Accept", "application/vnd.github.v3+json")
                     .addHeader("X-GitHub-Api-Version", "2022-11-28")
                     .build()
 
-                if (!context.isOnline()) {
-                    request = request.newBuilder()
-                        .cacheControl(CacheControl.Builder()
-                            .onlyIfCached()
-                            .maxStale(1, TimeUnit.DAYS)
-                            .build())
-                        .build()
-                }
-
-                chain.proceed(request)
-            }
-            // Network interceptor for online caching
-            .addNetworkInterceptor { chain ->
-                val response = chain.proceed(chain.request())
-                if (response.isSuccessful) {
-                    val cacheControl = CacheControl.Builder()
-                        .maxAge(5, TimeUnit.MINUTES) // Cache for 5 minutes when online
-                        .build()
-
-                    response.newBuilder()
-                        .removeHeader("Pragma") // Remove any conflicting headers
-                        .removeHeader("Cache-Control")
-                        .header("Cache-Control", cacheControl.toString())
+                // Modify cache control based on network availability
+                val request = if (context.isOnline()) {
+                    requestWithHeaders.newBuilder()
+                        .cacheControl(CacheControl.Builder().maxAge(5, TimeUnit.HOURS).build())
                         .build()
                 } else {
-                    response
+                    requestWithHeaders.newBuilder()
+                        .cacheControl(
+                            CacheControl.Builder()
+                                .onlyIfCached()
+                                .maxStale(7, TimeUnit.DAYS)
+                                .build()
+                        )
+                        .build()
                 }
+                println("🔍 REQUEST: ${request.url}")
+                println("🔍 Cache-Control: ${request.header("Cache-Control")}")
+                chain.proceed(request)
+            }
+            .addInterceptor { chain ->
+                val response = chain.proceed(chain.request())
+                println("🔍 RESPONSE CODE: ${response.code}")
+                println("🔍 From Cache: ${response.cacheResponse != null}")
+                println("🔍 From Network: ${response.networkResponse != null}")
+                println("🔍 Response Cache-Control: ${response.header("Cache-Control")}")
+                // Override server cache headers to enable caching
+                response.newBuilder()
+                    .header("Cache-Control", "public, max-age=${TimeUnit.HOURS.toSeconds(5)}")
+                    .removeHeader("Pragma")
+                    .build()
             }
             .apply {
                 if (BuildConfig.DEBUG) addInterceptor(loggingInterceptor)
@@ -98,7 +102,7 @@ object DataModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.github.com/")
+            .baseUrl(BuildConfig.GIHUB_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create())
             .build()

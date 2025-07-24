@@ -5,8 +5,8 @@ import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.data.helper.ErrorType
 
 data class UserProfileState(
-    val userState: DataState<UserDetail> = DataState(),
-    val repositoriesState: ListState<Repo> = ListState(),
+    val userState: DataUiState<UserDetail> = DataUiState(),
+    val repositoriesState: ListUiState<Repo> = ListUiState(),
     val errorCombined: ErrorType? = null
 ) {
     // for easier access

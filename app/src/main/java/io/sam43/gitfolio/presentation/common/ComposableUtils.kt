@@ -61,7 +61,7 @@ fun ErrorScreen(error: ErrorType?) {
     } else if (error != null) {
         ErrorHandler.getErrorMessage(error)
     } else {
-        "Loading..."
+        "..."
     }
     Box(
         contentAlignment = Alignment.Center,

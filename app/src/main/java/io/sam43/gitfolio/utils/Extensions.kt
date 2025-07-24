@@ -10,6 +10,7 @@ import android.os.Build
 import io.sam43.gitfolio.domain.model.UserDetail
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import java.util.Locale
 
 
 // String formatting extension
@@ -19,18 +20,18 @@ fun Int.toFormattedCountString(includeDecimalForThousands: Boolean = false): Str
         this < 1000 -> this.toString()
         this < 1_000_000 -> { // Thousands
             if (includeDecimalForThousands) {
-                String.format("%.1fK", this / 1000.0).replace(".0K", "K")
+                String.format(Locale.getDefault(),"%.1fK", this / 1000.0).replace(".0K", "K")
             } else {
                 "${this / 1000}K"
             }
         }
 
         this < 1_000_000_000 -> { // Millions
-            String.format("%.1fM", this / 1_000_000.0).replace(".0M", "M")
+            String.format(Locale.getDefault(), "%.1fM", this / 1_000_000.0).replace(".0M", "M")
         }
 
         else -> { // Billions and above
-            String.format("%.1fB", this / 1_000_000_000.0).replace(".0B", "B")
+            String.format(Locale.getDefault(),"%.1fB", this / 1_000_000_000.0).replace(".0B", "B")
         }
     }
 

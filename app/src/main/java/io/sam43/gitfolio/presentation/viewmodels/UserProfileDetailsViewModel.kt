@@ -1,19 +1,19 @@
 package io.sam43.gitfolio.presentation.viewmodels
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.sam43.gitfolio.data.helper.ErrorType
 import io.sam43.gitfolio.data.helper.NetworkMonitor
-import io.sam43.gitfolio.data.helper.handleDataResult
-import io.sam43.gitfolio.data.helper.handleListResult
 import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.domain.usecases.GetUserDetailsUseCase
 import io.sam43.gitfolio.domain.usecases.GetUserRepositoriesUseCase
-import io.sam43.gitfolio.presentation.state.DataState
-import io.sam43.gitfolio.presentation.state.ListState
+import io.sam43.gitfolio.presentation.state.DataUiState
+import io.sam43.gitfolio.presentation.state.ListUiState
 import io.sam43.gitfolio.presentation.state.UserProfileState
-import kotlinx.coroutines.async
+import io.sam43.gitfolio.presentation.state.updateWithDataResult
+import io.sam43.gitfolio.presentation.state.updateWithListResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,49 +28,46 @@ import javax.inject.Inject
 @HiltViewModel
 class UserProfileDetailsViewModel @Inject constructor(
     private val getProfileUseCase: GetUserDetailsUseCase,
-    private val getRepositoryUseCase: GetUserRepositoriesUseCase,
-    networkMonitor: NetworkMonitor
-) : ParentViewModel<UserDetail>(networkMonitor) {
-    private val _combinedError = MutableStateFlow<ErrorType?>(ErrorType.UnknownError())
-    private val _userState = MutableStateFlow(DataState<UserDetail>())
-    private val _repositoriesState = MutableStateFlow(ListState<Repo>())
+    private val getRepositoryUseCase: GetUserRepositoriesUseCase
+) : ViewModel() {
+    private val _userState = MutableStateFlow(DataUiState<UserDetail>())
+    private val _repositoriesState = MutableStateFlow(ListUiState<Repo>())
 
     val state: StateFlow<UserProfileState> = combine(
         _userState,
         _repositoriesState
     ) { userState, repoState ->
-        _combinedError.update { userState.error ?: repoState.error }
         UserProfileState(
             userState = userState,
             repositoriesState = repoState,
-            errorCombined = _combinedError.value
+            errorCombined = userState.error ?: repoState.error
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), UserProfileState())
 
     private fun fetchUserProfileDetails(userName: String) {
         viewModelScope.launch {
+            _repositoriesState.update { it.copy(isLoading = true) }
             try {
-                val profileDeferred = async {
-                    getProfileUseCase.invoke(userName).collectLatest { result ->
-                        _userState.handleDataResult(result)
-                    }
+                getProfileUseCase.invoke(userName).collectLatest { result ->
+                    _userState.updateWithDataResult(result)
                 }
-                val reposDeferred = async {
-                    getRepositoryUseCase.invoke(userName).collectLatest { result ->
-                        _repositoriesState.handleListResult(result)
-                    }
+                getRepositoryUseCase.invoke(userName).collectLatest { result ->
+                    _repositoriesState.updateWithListResult(result)
                 }
-
-                profileDeferred.await()
-                reposDeferred.await()
-
             } catch (e: Exception) {
-                _combinedError.value = ErrorType.UnknownError(e.message.toString().plus("during catch"))
+                e.printStackTrace()
+                _repositoriesState.update { currentState ->
+                    currentState.copy(
+                        isLoading = false,
+                        error = currentState.error,
+                        data = currentState.data.ifEmpty { emptyList() }
+                    )
+                }
             }
         }
     }
 
-    fun fetchUserProfileByUsername(username: String? = null) {
-        fetchUserProfileDetails(username ?: "")
+    fun fetchUserProfileByUsername(username: String) {
+        fetchUserProfileDetails(username)
     }
 }

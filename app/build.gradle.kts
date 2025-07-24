@@ -29,6 +29,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField ("String", "GITHUB_API_TOKEN", "\"${localProperties.getProperty("GITHUB_API_TOKEN", "")}\"")
+        buildConfigField ("String", "GIHUB_BASE_URL", "\"https://api.github.com/\"")
     }
 
     buildTypes {
@@ -86,7 +87,6 @@ dependencies {
 
     // Moshi
     implementation(libs.moshi)
-    implementation(libs.moshi.adapters)
     ksp(libs.moshi.codegen)
     
     // Image loading
