@@ -297,9 +297,9 @@ fun RepoListItem(repo: Repo) {
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Star, contentDescription = "Stars", tint = Color.Gray)
+                Icon(Icons.Rounded.Star, contentDescription = "Stars", tint = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.width(4.dp))
-                Text(repo.stargazersCount.toString(), color = Color.Gray)
+                Text(repo.stargazersCount.toString(), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -343,10 +343,10 @@ private fun getLanguageColorBy(language: String?): Color =
 @Composable
 fun FollowerInfo(followers: Int, following: Int, modifier: Modifier = Modifier) {
     Row(modifier = modifier) {
-        Text(followers.toFollowersString(), fontWeight = FontWeight.Bold, color = Color.Black)
-        Text(" followers • ", color = Color.Gray)
+        Text(followers.toFollowersString(), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+        Text(" followers • ", color = MaterialTheme.colorScheme.onSurface)
         Spacer(Modifier.width(8.dp))
-        Text(following.toFollowingsString(), fontWeight = FontWeight.Bold, color = Color.DarkGray)
+        Text(following.toFollowingsString(), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
         Text(" following", color = Color.Gray)
     }
 }
