@@ -11,6 +11,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -86,6 +88,10 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
+            val systemIsDark = isSystemInDarkTheme()
+            LaunchedEffect(systemIsDark) {
+                themeViewModel.setTheme(systemIsDark)
+            }
             val isDarkTheme by themeViewModel.isDarkTheme.collectAsStateWithLifecycle()
 
             GitFolioTheme(darkTheme = isDarkTheme) {
@@ -225,7 +231,8 @@ fun AppMain(modifier: Modifier, navController: NavHostController, themeViewModel
                     avatarUrl = avatarUrl,
                     displayName = displayName,
                     sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedVisibilityScope = this
+                    animatedVisibilityScope = this,
+                    navController = navController
                 )
             }
             composable(SETTINGS_SCREEN) {
