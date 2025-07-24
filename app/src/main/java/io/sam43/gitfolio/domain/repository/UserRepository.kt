@@ -8,7 +8,7 @@ import io.sam43.gitfolio.data.helper.Result
 import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
-    fun getUsers(): Flow<Result<List<User>, ErrorType>>
+    fun getUsers(since: Int, perPage: Int): Flow<Result<List<User>, ErrorType>>
     fun searchUsers(query: String): Flow<Result<List<User>, ErrorType>>
     fun getUserDetails(username: String): Flow<Result<UserDetail, ErrorType>>
     fun getUserRepositories(username: String): Flow<Result<List<Repo>, ErrorType>>

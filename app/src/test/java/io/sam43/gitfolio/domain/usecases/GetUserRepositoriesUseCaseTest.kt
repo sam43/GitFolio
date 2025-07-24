@@ -67,7 +67,7 @@ class GetUserRepositoriesUseCaseTest {
         // Then
         assertEquals(1, result.size)
         assertTrue(result[0] is Result.Error)
-        assertEquals(ErrorType.NetworkError, (result[0] as Result.Error).errorType)
+        assertEquals(ErrorType.NetworkError, (result[0] as Result.Error).error)
     }
 
     @Test

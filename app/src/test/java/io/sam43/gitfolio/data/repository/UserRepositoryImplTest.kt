@@ -31,16 +31,16 @@ class UserRepositoryImplTest {
             User(id = 1, login = "user1", avatarUrl = "", htmlUrl = "", type = ""),
             User(id = 2, login = "user2", avatarUrl = "", htmlUrl = "", type = "")
         )
-        coEvery { apiService.getUsers() } returns Response.success(users)
+        coEvery { apiService.getUsers(any(), any()) } returns Response.success(users)
 
         // When
-        val result = userRepository.getUsers().toList()
+        val result = userRepository.getUsers(0, 20).toList()
 
         // Then
         assertEquals(1, result.size)
         assertTrue(result[0] is Result.Success)
         assertEquals(users, (result[0] as Result.Success).data)
-        coVerify { apiService.getUsers() }
+        coVerify { apiService.getUsers(any(), any()) }
     }
 
     @Test
@@ -71,20 +71,20 @@ class UserRepositoryImplTest {
         // Then
         assertEquals(1, result.size)
         assertTrue(result[0] is Result.Error)
-        assertEquals(ErrorType.SearchQueryError, (result[0] as Result.Error).errorType)
+        assertEquals(ErrorType.SearchQueryError, (result[0] as Result.Error).error)
     }
 
     @Test
     fun `when API call fails, should return error`() = runTest {
         // Given
-        coEvery { apiService.getUsers() } throws AppException.NetworkError("Network error")
+        coEvery { apiService.getUsers(any(), any()) } throws AppException.NetworkError("Network error")
 
         // When
-        val result = userRepository.getUsers().toList()
+        val result = userRepository.getUsers(0, 20).toList()
 
         // Then
         assertEquals(1, result.size)
         assertTrue(result[0] is Result.Error)
-        assertEquals(ErrorType.NetworkError, (result[0] as Result.Error).errorType)
+        assertEquals(ErrorType.NetworkError, (result[0] as Result.Error).error)
     }
 }

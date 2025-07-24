@@ -25,9 +25,8 @@ class GetUserListUseCaseTest {
     }
 
     @Test
-    fun `when searchUsers is called with valid query, should return list of users`() = runTest {
+    fun `when getUsers is called, should return success with list of users`() = runTest {
         // Given
-        val query = "octocat"
         val expectedUsers = listOf(
             User(
                 id = 1,
@@ -45,10 +44,10 @@ class GetUserListUseCaseTest {
             )
         )
         
-        coEvery { mockUserRepository.searchUsers(query) } returns flowOf(Result.Success(expectedUsers))
+        coEvery { mockUserRepository.getUsers(any(), any()) } returns flowOf(Result.Success(expectedUsers))
 
         // When
-        val result = getUserListUseCase(query).toList()
+        val result = getUserListUseCase(0, 20).toList()
 
         // Then
         assertEquals(1, result.size)
@@ -57,46 +56,43 @@ class GetUserListUseCaseTest {
     }
 
     @Test
-    fun `when searchUsers is called with empty query, should return empty list`() = runTest {
+    fun `when getUsers is called with empty list, should return empty list`() = runTest {
         // Given
-        val query = ""
         val expectedUsers = emptyList<User>()
         
-        coEvery { mockUserRepository.searchUsers(query) } returns flowOf(Result.Success(expectedUsers))
+        coEvery { mockUserRepository.getUsers(any(), any()) } returns flowOf(Result.Success(expectedUsers))
 
         // When
-        val result = getUserListUseCase(query).toList()
+        val result = getUserListUseCase(0, 20).toList()
         println("Emitted results: $result")
 
         // Then
-        assertEquals(0, result.size)
+        assertEquals(1, result.size)
+        assertTrue(result[0] is Result.Success)
+        assertEquals(expectedUsers, (result[0] as Result.Success).data)
     }
 
     @Test
-    fun `when searchUsers fails, should return error result`() = runTest {
+    fun `when getUsers fails, should return error result`() = runTest {
         // Given
-        val query = "invalid"
-        
-        coEvery { mockUserRepository.searchUsers(query) } returns flowOf(Result.Error(ErrorType.NetworkError))
+        coEvery { mockUserRepository.getUsers(any(), any()) } returns flowOf(Result.Error(ErrorType.NetworkError))
 
         // When
-        val result = getUserListUseCase(query).toList()
+        val result = getUserListUseCase(0, 20).toList()
 
         // Then
         assertEquals(1, result.size)
         assertTrue(result[0] is Result.Error)
-        assertEquals(ErrorType.NetworkError, (result[0] as Result.Error).errorType)
+        assertEquals(ErrorType.NetworkError, (result[0] as Result.Error).error)
     }
 
     @Test
-    fun `when searchUsers is loading, should return loading result`() = runTest {
+    fun `when getUsers is loading, should return loading result`() = runTest {
         // Given
-        val query = "octocat"
-        
-        coEvery { mockUserRepository.searchUsers(query) } returns flowOf(Result.Loading)
+        coEvery { mockUserRepository.getUsers(any(), any()) } returns flowOf(Result.Loading)
 
         // When
-        val result = getUserListUseCase(query).toList()
+        val result = getUserListUseCase(0, 20).toList()
 
         // Then
         assertEquals(1, result.size)

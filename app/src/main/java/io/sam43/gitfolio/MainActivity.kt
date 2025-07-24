@@ -61,10 +61,10 @@ import io.sam43.gitfolio.presentation.common.AppNavigation.Companion.USER_PROFIL
 import io.sam43.gitfolio.presentation.common.NetworkUiEvent
 import io.sam43.gitfolio.presentation.common.bottomNavItems
 import io.sam43.gitfolio.presentation.common.theme.GitFolioTheme
-import io.sam43.gitfolio.presentation.screens.GithubProfileScreen
-import io.sam43.gitfolio.presentation.screens.SearchBox
+import io.sam43.gitfolio.presentation.userprofile.UserProfileScreen
+
 import io.sam43.gitfolio.presentation.screens.SettingsScreen
-import io.sam43.gitfolio.presentation.screens.UserListScreen
+import io.sam43.gitfolio.presentation.userlist.UserListScreen
 import io.sam43.gitfolio.presentation.viewmodels.ThemeViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -177,28 +177,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun LandingScreen(
-    navController: NavController,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope
-) {
-    var searchQuery by remember { mutableStateOf("") }
-    Column(modifier = Modifier.fillMaxSize()) {
-        SearchBox(
-            query = searchQuery,
-            onQueryChange = { searchQuery = it },
-            modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        )
-        UserListScreen(
-            navController = navController,
-            sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope,
-            searchQuery = searchQuery
-        )
-    }
-}
+
 
 @Composable
 fun AppMain(modifier: Modifier, navController: NavHostController, themeViewModel: ThemeViewModel) {
@@ -209,10 +188,8 @@ fun AppMain(modifier: Modifier, navController: NavHostController, themeViewModel
             modifier = modifier
         ) {
             composable(USERS_SCREEN) {
-                LandingScreen(
-                    navController = navController,
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedVisibilityScope = this
+                UserListScreen(
+                    navController = navController
                 )
             }
             composable(
@@ -226,7 +203,7 @@ fun AppMain(modifier: Modifier, navController: NavHostController, themeViewModel
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val avatarUrl = backStackEntry.arguments?.getString("avatarUrl") ?: ""
                 val displayName = backStackEntry.arguments?.getString("displayName") ?: ""
-                GithubProfileScreen(
+                UserProfileScreen(
                     username = username,
                     avatarUrl = avatarUrl,
                     displayName = displayName,

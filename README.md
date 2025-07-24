@@ -46,10 +46,18 @@ app/
     │   │       │   └── repository/      # Repository interfaces
     │   │       │
     │   │       ├── presentation/        # Presentation Layer (UI)
-    │   │       │   ├── theme/           # Jetpack Compose theme
-    │   │       │   ├── ui/              # Composable screens and components
-    │   │       │   └── viewmodels/      # ViewModels for UI state management
-    │   │       │
+│   │       │   ├── mvi/                  # Core MVI interfaces (State, Event, Effect)
+│   │       │   ├── common/               # Shared composables
+│   │       │   ├── theme/                # Jetpack Compose theme
+│   │       │   ├── userlist/             # User List Feature
+│   │       │   │   ├── UserListContract.kt # Defines State, Event, Effect for this feature
+│   │       │   │   ├── UserListScreen.kt
+│   │       │   │   └── UserListViewModel.kt
+│   │       │   └── userprofile/          # User Profile Feature
+│   │       │       ├── UserProfileContract.kt
+│   │       │       ├── UserProfileScreen.kt
+│   │       │       └── UserProfileViewModel.kt
+│   │       │
     │   │       └── util/                # Utility classes
     │   │
     │   └── res/                     # Android resources

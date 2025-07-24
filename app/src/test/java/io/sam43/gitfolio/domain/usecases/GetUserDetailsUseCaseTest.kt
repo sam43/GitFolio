@@ -68,7 +68,7 @@ class GetUserDetailsUseCaseTest {
         // Then
         assertEquals(1, result.size)
         assertTrue(result[0] is Result.Error)
-        assertEquals(ErrorType.ApiError(404, "User not found"), (result[0] as Result.Error).errorType)
+        assertEquals(ErrorType.ApiError(404, "User not found"), (result[0] as Result.Error).error)
     }
 
     @Test
@@ -99,6 +99,6 @@ class GetUserDetailsUseCaseTest {
         // Then
         assertEquals(1, result.size)
         assertTrue(result[0] is Result.Error)
-        assertEquals(ErrorType.SearchQueryError, (result[0] as Result.Error).errorType)
+        assertEquals(ErrorType.SearchQueryError, (result[0] as Result.Error).error)
     }
 }

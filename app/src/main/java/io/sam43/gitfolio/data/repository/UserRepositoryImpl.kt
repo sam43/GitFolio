@@ -22,43 +22,34 @@ import javax.inject.Inject
 class UserRepositoryImpl @Inject constructor(
     private val apiService: ApiService
 ) : UserRepository {
-    override fun getUsers(): Flow<Result<List<User>, ErrorType>> = flow {
-        try {
-            emit(Result.Loading) // Optional: emit loading state
+    override fun getUsers(since: Int, perPage: Int): Flow<Result<List<User>, ErrorType>> = flow {
+        emit(Result.Loading) // Optional: emit loading state
 
-            val response = apiService.getUsers()
+        val response = apiService.getUsers(since, perPage)
 
-            when {
-                response.isSuccessful -> {
-                    val users = response.body()
-                    if (!users.isNullOrEmpty()) {
-                        Log.d("UserRepository", "Success - From cache: ${response.raw().cacheResponse != null}")
-                        emit(Result.Success(users))
-                    } else {
-                        emit(Result.Error(ErrorHandler.handleError(AppException.EmptyBodyError())))
-                    }
-                }
-                response.code() == 504 -> {
-                    // Gateway timeout - likely offline with no cache
-                    Log.w("UserRepository", "Offline with no cached data")
-                    emit(Result.Error(ErrorHandler.handleError(AppException.NetworkError("No cached data available"))))
-                }
-                else -> {
-                    Log.e("UserRepository", "HTTP Error: ${response.code()}")
-                    emit(Result.Error(ErrorHandler.handleError(AppException.ApiError("HTTP ${response.code()}"))))
+        when {
+            response.isSuccessful -> {
+                val users = response.body()
+                if (!users.isNullOrEmpty()) {
+                    Log.d("UserRepository", "Success - From cache: ${response.raw().cacheResponse != null}")
+                    emit(Result.Success(users))
+                } else {
+                    emit(Result.Error(ErrorHandler.handleError(AppException.EmptyBodyError())))
                 }
             }
-        } catch (e: SocketTimeoutException) {
-            Log.w("UserRepository", "Timeout - possibly offline")
-            emit(Result.Error(ErrorHandler.handleError(AppException.NetworkError("Connection timeout"))))
-        } catch (e: IOException) {
-            Log.w("UserRepository", "Network error - possibly offline: ${e.message}")
-            emit(Result.Error(ErrorHandler.handleError(AppException.NetworkError("Network unavailable"))))
-        } catch (e: Exception) {
-            Log.e("UserRepository", "Unexpected error: ${e.message}", e)
-            emit(Result.Error(ErrorHandler.handleError(e)))
+            response.code() == 504 -> {
+                // Gateway timeout - likely offline with no cache
+                Log.w("UserRepository", "Offline with no cached data")
+                emit(Result.Error(ErrorHandler.handleError(AppException.NetworkError("No cached data available"))))
+            }
+            else -> {
+                Log.e("UserRepository", "HTTP Error: ${response.code()}")
+                emit(Result.Error(ErrorHandler.handleError(AppException.ApiError("HTTP ${response.code()}"))))
+            }
         }
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(Dispatchers.IO).catch { e ->
+        emit(Result.Error(ErrorHandler.handleError(e)))
+    }
 
     override fun searchUsers(query: String): Flow<Result<List<User>, ErrorType>> = flow {
         if (query.isEmpty()) {

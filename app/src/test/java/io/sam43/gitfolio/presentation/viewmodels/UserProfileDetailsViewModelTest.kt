@@ -1,20 +1,17 @@
-@file:OptIn(ExperimentalCoroutinesApi::class)
-
 package io.sam43.gitfolio.presentation.viewmodels
 
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
 import io.mockk.mockk
 import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.domain.usecases.GetUserDetailsUseCase
 import io.sam43.gitfolio.domain.usecases.GetUserRepositoriesUseCase
 import io.sam43.gitfolio.data.helper.ErrorType
-import io.sam43.gitfolio.data.helper.NetworkMonitor
-import io.sam43.gitfolio.data.helper.NetworkStatus
 import io.sam43.gitfolio.data.helper.Result
+import io.sam43.gitfolio.presentation.userprofile.UserProfileContract
+import io.sam43.gitfolio.presentation.userprofile.UserProfileViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -30,12 +27,11 @@ import org.junit.Before
 import org.junit.Test
 
 
-class UserProfileDetailsViewModelTest {
+class UserProfileViewModelTest {
 
-    private lateinit var viewModel: UserProfileDetailsViewModel
+    private lateinit var viewModel: UserProfileViewModel
     private val getProfileUseCase = mockk<GetUserDetailsUseCase>()
     private val getRepositoryUseCase = mockk<GetUserRepositoriesUseCase>()
-    private val networkMonitor = mockk<NetworkMonitor>(relaxed = true)
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -43,11 +39,10 @@ class UserProfileDetailsViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        every { networkMonitor.networkStatus } returns flowOf(NetworkStatus.Available)
 
-        viewModel = UserProfileDetailsViewModel(
-            getProfileUseCase = getProfileUseCase,
-            getRepositoryUseCase = getRepositoryUseCase
+        viewModel = UserProfileViewModel(
+            getUserDetailsUseCase = getProfileUseCase,
+            getUserRepositoriesUseCase = getRepositoryUseCase
         )
     }
 
@@ -58,7 +53,7 @@ class UserProfileDetailsViewModelTest {
     }
 
     @Test
-    fun `fetchUserProfileByUsername should update both states with success data`() = testScope.runTest {
+    fun `fetchUserProfile should update both states with success data`() = testScope.runTest {
         // Given
         val userName = "testuser"
         val mockUser = mockk<UserDetail>()
@@ -68,7 +63,7 @@ class UserProfileDetailsViewModelTest {
         coEvery { getRepositoryUseCase.invoke(userName) } returns flowOf(Result.Success(mockRepos))
 
         // When
-        viewModel.fetchUserProfileByUsername(userName)
+        viewModel.setEvent(UserProfileContract.Event.FetchUserProfile(userName))
         advanceUntilIdle()
 
         // Then
@@ -77,22 +72,14 @@ class UserProfileDetailsViewModelTest {
         assertEquals(mockRepos, finalState.repositories)
         assertEquals(false, finalState.isLoading)
         assertEquals(null, finalState.error)
-
-        // Verify individual states
-        assertEquals(mockUser, finalState.userState.data)
-        assertEquals(false, finalState.userState.isLoading)
-        assertEquals(null, finalState.userState.error)
-
-        assertEquals(mockRepos, finalState.repositoriesState.items)
-        assertEquals(false, finalState.repositoriesState.isLoading)
-        assertEquals(null, finalState.repositoriesState.error)
+        assertEquals(true, finalState.hasLoaded)
 
         coVerify { getProfileUseCase.invoke(userName) }
         coVerify { getRepositoryUseCase.invoke(userName) }
     }
 
     @Test
-    fun `fetchUserProfileByUsername should handle profile success and repository error`() = testScope.runTest {
+    fun `fetchUserProfile should handle profile success and repository error`() = testScope.runTest {
         // Given
         val userName = "testuser"
         val mockUser = mockk<UserDetail>()
@@ -102,7 +89,7 @@ class UserProfileDetailsViewModelTest {
         coEvery { getRepositoryUseCase.invoke(userName) } returns flowOf(Result.Error(repoError))
 
         // When
-        viewModel.fetchUserProfileByUsername(userName)
+        viewModel.setEvent(UserProfileContract.Event.FetchUserProfile(userName))
         advanceUntilIdle()
 
         // Then
@@ -111,19 +98,11 @@ class UserProfileDetailsViewModelTest {
         assertEquals(emptyList<Repo>(), finalState.repositories)
         assertEquals(false, finalState.isLoading)
         assertEquals(repoError, finalState.error) // Should return the repository error
-
-        // Verify individual states
-        assertEquals(mockUser, finalState.userState.data)
-        assertEquals(false, finalState.userState.isLoading)
-        assertEquals(null, finalState.userState.error)
-
-        assertEquals(emptyList<Repo>(), finalState.repositoriesState.items)
-        assertEquals(false, finalState.repositoriesState.isLoading)
-        assertEquals(repoError, finalState.repositoriesState.error)
+        assertEquals(true, finalState.hasLoaded)
     }
 
     @Test
-    fun `fetchUserProfileByUsername should handle profile error and repository success`() = testScope.runTest {
+    fun `fetchUserProfile should handle profile error and repository success`() = testScope.runTest {
         // Given
         val userName = "testuser"
         val profileError = ErrorType.NetworkError
@@ -133,7 +112,7 @@ class UserProfileDetailsViewModelTest {
         coEvery { getRepositoryUseCase.invoke(userName) } returns flowOf(Result.Success(mockRepos))
 
         // When
-        viewModel.fetchUserProfileByUsername(userName)
+        viewModel.setEvent(UserProfileContract.Event.FetchUserProfile(userName))
         advanceUntilIdle()
 
         // Then
@@ -142,20 +121,12 @@ class UserProfileDetailsViewModelTest {
         assertEquals(mockRepos, finalState.repositories)
         assertEquals(false, finalState.isLoading)
         assertEquals(profileError, finalState.error) // Should return the profile error
-
-        // Verify individual states
-        assertEquals(null, finalState.userState.data)
-        assertEquals(false, finalState.userState.isLoading)
-        assertEquals(profileError, finalState.userState.error)
-
-        assertEquals(mockRepos, finalState.repositoriesState.items)
-        assertEquals(false, finalState.repositoriesState.isLoading)
-        assertEquals(null, finalState.repositoriesState.error)
+        assertEquals(true, finalState.hasLoaded)
     }
 
 
     @Test
-    fun `fetchUserProfileByUsername should handle both profile and repository errors`() = testScope.runTest {
+    fun `fetchUserProfile should handle both profile and repository errors`() = testScope.runTest {
         // Given
         val userName = "testuser"
         val profileError = ErrorType.NetworkError
@@ -165,7 +136,7 @@ class UserProfileDetailsViewModelTest {
         coEvery { getRepositoryUseCase.invoke(userName) } returns flowOf(Result.Error(repoError))
 
         // When
-        viewModel.fetchUserProfileByUsername(userName)
+        viewModel.setEvent(UserProfileContract.Event.FetchUserProfile(userName))
         advanceUntilIdle()
 
         // Then
@@ -174,17 +145,14 @@ class UserProfileDetailsViewModelTest {
         assertEquals(emptyList<Repo>(), finalState.repositories)
         assertEquals(false, finalState.isLoading)
         assertEquals(profileError, finalState.error)
-
-        // Verify individual states have their respective errors
-        assertEquals(profileError, finalState.userState.error)
-        assertEquals(repoError, finalState.repositoriesState.error)
+        assertEquals(true, finalState.hasLoaded)
 
         coVerify { getProfileUseCase.invoke(userName) }
         coVerify { getRepositoryUseCase.invoke(userName) }
     }
 
     @Test
-    fun `fetchUserProfileByUsername should handle loading states`() = testScope.runTest {
+    fun `fetchUserProfile should handle loading states`() = testScope.runTest {
         // Given
         val userName = "testuser"
         val mockUser = mockk<UserDetail>()
@@ -200,7 +168,7 @@ class UserProfileDetailsViewModelTest {
         )
 
         // When
-        viewModel.fetchUserProfileByUsername(userName)
+        viewModel.setEvent(UserProfileContract.Event.FetchUserProfile(userName))
         advanceUntilIdle()
 
         // Then - After completion, should not be loading
@@ -209,10 +177,11 @@ class UserProfileDetailsViewModelTest {
         assertEquals(mockRepos, finalState.repositories)
         assertEquals(false, finalState.isLoading)
         assertEquals(null, finalState.error)
+        assertEquals(true, finalState.hasLoaded)
     }
 
     @Test
-    fun `fetchUserProfileByUsername should handle exception and update user state with error`() = testScope.runTest {
+    fun `fetchUserProfile should handle exception and update user state with error`() = testScope.runTest {
         // Given
         val userName = "testuser"
         val exceptionMessage = "Network timeout"
@@ -223,7 +192,7 @@ class UserProfileDetailsViewModelTest {
 
 
         // When
-        viewModel.fetchUserProfileByUsername(userName)
+        viewModel.setEvent(UserProfileContract.Event.FetchUserProfile(userName))
         advanceUntilIdle()
 
         // Then
@@ -232,17 +201,13 @@ class UserProfileDetailsViewModelTest {
         assertEquals(emptyList<Repo>(), finalState.repositories)
 
         // The exception should update the user state with error
-        assertEquals(ErrorType.UnknownError(exceptionMessage), finalState.userState.error)
-        assertEquals(false, finalState.userState.isLoading)
-
-        // Repository state should remain unchanged (default state)
-        assertEquals(emptyList<Repo>(), finalState.repositoriesState.items)
-        assertEquals(false, finalState.repositoriesState.isLoading)
-        assertEquals(null, finalState.repositoriesState.error)
+        assertEquals(ErrorType.UnknownError(exceptionMessage), finalState.error)
+        assertEquals(false, finalState.isLoading)
+        assertEquals(true, finalState.hasLoaded)
     }
 
     @Test
-    fun `fetchUserProfileByUsername should handle repository use case exception`() = testScope.runTest {
+    fun `fetchUserProfile should handle repository use case exception`() = testScope.runTest {
         // Given
         val userName = "testuser"
         val mockUser = mockk<UserDetail>()
@@ -253,19 +218,20 @@ class UserProfileDetailsViewModelTest {
         coEvery { getRepositoryUseCase.invoke(userName) } throws exception
 
         // When
-        viewModel.fetchUserProfileByUsername(userName)
+        viewModel.setEvent(UserProfileContract.Event.FetchUserProfile(userName))
         advanceUntilIdle()
 
         // Then
         val finalState = viewModel.state.value
 
         // Profile should succeed
-        assertEquals(mockUser, finalState.userState.data)
-        assertEquals(false, finalState.userState.isLoading)
-        assertEquals(null, finalState.userState.error)
+        assertEquals(mockUser, finalState.user)
+        assertEquals(false, finalState.isLoading)
+        assertEquals(null, finalState.error)
 
         // But overall state should show the exception in user state (as per catch block)
-        assertEquals(ErrorType.UnknownError(exceptionMessage), finalState.repositoriesState.error)
+        assertEquals(ErrorType.UnknownError(exceptionMessage), finalState.error)
+        assertEquals(true, finalState.hasLoaded)
     }
 
     @Test
@@ -279,7 +245,7 @@ class UserProfileDetailsViewModelTest {
         coEvery { getRepositoryUseCase.invoke(userName) } returns flowOf(Result.Success(mockRepos))
 
         // When
-        viewModel.fetchUserProfileByUsername(userName)
+        viewModel.setEvent(UserProfileContract.Event.FetchUserProfile(userName))
         advanceUntilIdle()
 
         // Then - Test convenience properties
@@ -288,5 +254,6 @@ class UserProfileDetailsViewModelTest {
         assertEquals(mockRepos, state.repositories)
         assertEquals(false, state.isLoading)
         assertEquals(null, state.error)
+        assertEquals(true, state.hasLoaded)
     }
 }

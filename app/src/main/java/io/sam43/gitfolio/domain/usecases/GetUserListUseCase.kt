@@ -10,12 +10,7 @@ import javax.inject.Inject
 class GetUserListUseCase @Inject constructor(
     private val userRepository: UserRepository
 ) {
-    operator fun invoke(query: String? = null): Flow<Result<List<User>, ErrorType>> {
-        return if (query.isNullOrBlank()) {
-            userRepository.getUsers()
-        } else {
-            // filter it offline for better performance, still keeping this for future usecases
-            userRepository.searchUsers(query)
-        }
+    operator fun invoke(since: Int, perPage: Int): Flow<Result<List<User>, ErrorType>> {
+        return userRepository.getUsers(since = since, perPage = perPage)
     }
 }
