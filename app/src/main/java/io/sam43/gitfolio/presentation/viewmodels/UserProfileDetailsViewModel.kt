@@ -45,7 +45,7 @@ class UserProfileDetailsViewModel @Inject constructor(
             repositoriesState = repoState,
             errorCombined = _combinedError.value
         )
-    }.stateIn(viewModelScope, SharingStarted.Lazily, UserProfileState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), UserProfileState())
 
     private fun fetchUserProfileDetails(userName: String) {
         viewModelScope.launch {

@@ -55,13 +55,13 @@ fun UserListScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     when {
         state.isLoading -> CenteredCircularProgressIndicator()
-        !state.isLoading && state.users.isNotEmpty() -> UserList(
+        state.items.isNotEmpty() -> UserList(
             userListState = state,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
             searchQuery = searchQuery ?: "",
         ) { user -> navController.navigateToProfile(user) }
-        else -> ErrorScreen(error = state.error ?: ErrorType.UnknownError())
+        state.error != null -> ErrorScreen(error = state.error ?: ErrorType.UnknownError())
     }
 }
 
@@ -76,17 +76,17 @@ private fun NavController.navigateToProfile(user: User) {
 
 @Composable
 fun UserList(
-    listState: ListState<User>,
+    userListState: ListState<User>,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     searchQuery: String,
     onItemClick: (User) -> Unit = {}
 ) {
-    val filteredUsers = remember(userListState.users, searchQuery) {
+    val filteredUsers = remember(userListState.items, searchQuery) {
         if (searchQuery.isBlank()) {
-            userListState.users
+            userListState.items
         } else {
-            userListState.users.filter { user ->
+            userListState.items.filter { user ->
                 user.login.contains(searchQuery, ignoreCase = true)
             }
         }

@@ -1,10 +1,6 @@
 package io.sam43.gitfolio.di
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.os.Build
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,6 +10,7 @@ import io.sam43.gitfolio.BuildConfig
 import io.sam43.gitfolio.data.remote.ApiService
 import io.sam43.gitfolio.data.repository.UserRepositoryImpl
 import io.sam43.gitfolio.domain.repository.UserRepository
+import io.sam43.gitfolio.utils.isOnline
 import okhttp3.Cache
 import okhttp3.CacheControl
 import okhttp3.OkHttpClient
@@ -60,7 +57,7 @@ object DataModule {
                     .addHeader("X-GitHub-Api-Version", "2022-11-28")
                     .build()
 
-                if (!context.isNetworkAvailable()) {
+                if (!context.isOnline()) {
                     request = request.newBuilder()
                         .cacheControl(CacheControl.Builder()
                             .onlyIfCached()
@@ -74,8 +71,6 @@ object DataModule {
             // Network interceptor for online caching
             .addNetworkInterceptor { chain ->
                 val response = chain.proceed(chain.request())
-
-                // Only modify cache headers for successful responses
                 if (response.isSuccessful) {
                     val cacheControl = CacheControl.Builder()
                         .maxAge(5, TimeUnit.MINUTES) // Cache for 5 minutes when online
@@ -119,20 +114,6 @@ object DataModule {
     @Singleton
     fun provideUserRepository(userRepositoryImpl: UserRepositoryImpl): UserRepository {
         return userRepositoryImpl
-    }
-}
-
-@SuppressLint("ObsoleteSdkInt")
-@Suppress("DEPRECATION")
-private fun Context.isNetworkAvailable(): Boolean {
-    val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        val network = connectivityManager.activeNetwork ?: return false
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-        capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    } else {
-        val networkInfo = connectivityManager.activeNetworkInfo
-        networkInfo?.isConnected == true
     }
 }
 
