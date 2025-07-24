@@ -3,8 +3,6 @@ package io.sam43.gitfolio.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.sam43.gitfolio.data.helper.ErrorType
-import io.sam43.gitfolio.data.helper.NetworkMonitor
 import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.domain.usecases.GetUserDetailsUseCase

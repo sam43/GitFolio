@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.sam43.gitfolio.data.helper.ErrorType
-import io.sam43.gitfolio.data.helper.NetworkMonitor
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.domain.usecases.GetUserListUseCase
 import io.sam43.gitfolio.presentation.state.ListUiState

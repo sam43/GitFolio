@@ -47,8 +47,7 @@ class UserProfileDetailsViewModelTest {
 
         viewModel = UserProfileDetailsViewModel(
             getProfileUseCase = getProfileUseCase,
-            getRepositoryUseCase = getRepositoryUseCase,
-            networkMonitor = networkMonitor
+            getRepositoryUseCase = getRepositoryUseCase
         )
     }
 

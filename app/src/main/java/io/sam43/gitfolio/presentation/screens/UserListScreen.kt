@@ -20,7 +20,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -33,15 +32,15 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import io.sam43.gitfolio.data.helper.ErrorType
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.presentation.common.AppNavigation
 import io.sam43.gitfolio.presentation.common.AppNavigation.Companion.USER_PROFILE_SCREEN
 import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
 import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
-import io.sam43.gitfolio.presentation.viewmodels.UserListViewModel
-import io.sam43.gitfolio.data.helper.ErrorType
 import io.sam43.gitfolio.presentation.state.ListUiState
+import io.sam43.gitfolio.presentation.viewmodels.UserListViewModel
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
