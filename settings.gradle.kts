@@ -21,4 +21,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "GitFolio"
 include(":app")
-include(":retrofit-cache")

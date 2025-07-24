@@ -32,15 +32,15 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import io.sam43.gitfolio.data.helper.ErrorType
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.presentation.common.AppNavigation
 import io.sam43.gitfolio.presentation.common.AppNavigation.Companion.USER_PROFILE_SCREEN
 import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
 import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
-import io.sam43.gitfolio.presentation.state.UserListState
+import io.sam43.gitfolio.presentation.state.ListUiState
 import io.sam43.gitfolio.presentation.viewmodels.UserListViewModel
-import io.sam43.gitfolio.utils.ErrorType
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -55,13 +55,13 @@ fun UserListScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     when {
         state.isLoading -> CenteredCircularProgressIndicator()
-        !state.isLoading && state.users.isNotEmpty() -> UserList(
+        state.items.isNotEmpty() -> UserList(
             userListState = state,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
             searchQuery = searchQuery ?: "",
         ) { user -> navController.navigateToProfile(user) }
-        else -> ErrorScreen(error = state.error ?: ErrorType.UnknownError())
+        state.error != null -> ErrorScreen(error = state.error ?: ErrorType.UnknownError())
     }
 }
 
@@ -76,17 +76,17 @@ private fun NavController.navigateToProfile(user: User) {
 
 @Composable
 fun UserList(
-    userListState: UserListState,
+    userListState: ListUiState<User>,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     searchQuery: String,
     onItemClick: (User) -> Unit = {}
 ) {
-    val filteredUsers = remember(userListState.users, searchQuery) {
+    val filteredUsers = remember(userListState.items, searchQuery) {
         if (searchQuery.isBlank()) {
-            userListState.users
+            userListState.items
         } else {
-            userListState.users.filter { user ->
+            userListState.items.filter { user ->
                 user.login.contains(searchQuery, ignoreCase = true)
             }
         }

@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalSharedTransitionApi::class)
+@file:OptIn(ExperimentalSharedTransitionApi::class)
 package io.sam43.gitfolio.presentation.screens
 
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -59,10 +59,11 @@ import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
 import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
 import io.sam43.gitfolio.presentation.viewmodels.UserProfileDetailsViewModel
-import io.sam43.gitfolio.utils.ErrorType
+import io.sam43.gitfolio.data.helper.ErrorType
+import io.sam43.gitfolio.presentation.state.UserProfileState
+import io.sam43.gitfolio.presentation.state.hasErrorWithoutUser
+import io.sam43.gitfolio.utils.createPlaceholderUser
 import io.sam43.gitfolio.utils.toFormattedCountString
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 
 @Composable
 fun GithubProfileScreen(
@@ -77,51 +78,28 @@ fun GithubProfileScreen(
         viewModel.fetchUserProfileByUsername(username)
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
-
-    val displayUserForTransition = remember(state.user, avatarUrl, displayName, username) {
-        if (state.user != null) {
-            state.user
-        } else {
-            UserDetail(
-                login = username,
-                id = 0,
-                avatarUrl = URLDecoder.decode(avatarUrl, StandardCharsets.UTF_8.name()),
-                name = URLDecoder.decode(displayName, StandardCharsets.UTF_8.name()),
-                htmlUrl = "",
-                company = null,
-                blog = null,
-                location = null,
-                email = null,
-                bio = null,
-                publicRepos = 0,
-                followers = 0,
-                following = 0
+    val displayUser = remember(state.user, avatarUrl, displayName, username) {
+        state.user ?: createPlaceholderUser(username, avatarUrl, displayName)
+    }
+    when {
+        state.hasErrorWithoutUser() -> {
+            ErrorScreen(error = state.error ?: ErrorType.UnknownError())
+        }
+        else -> {
+            UserProfileView(
+                user = displayUser,
+                profileState = state,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope
             )
         }
-    }
-
-    if (state.error != null && state.user == null) { // Show error only if full load fails
-        ErrorScreen(error = state.error ?: ErrorType.UnknownError())
-    } else if (state.isLoading && displayUserForTransition == null) {
-        CenteredCircularProgressIndicator()
-    } else if (displayUserForTransition != null) {
-        UserProfileView(
-            user = displayUserForTransition,
-            repositories = state.repositories,
-            isLoading = state.isLoading && state.user == null,
-            sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope // Pass this down
-        )
-    } else {
-        CenteredCircularProgressIndicator()
     }
 }
 
 @Composable
 fun UserProfileView(
     user: UserDetail,
-    repositories: List<Repo>,
-    isLoading: Boolean,
+    profileState: UserProfileState,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope
 ) {
@@ -152,16 +130,20 @@ fun UserProfileView(
                 .padding(paddingValues)
         ) {
             when {
-                isLoading -> CenteredCircularProgressIndicator(
+                profileState.isLoading -> CenteredCircularProgressIndicator(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
                 )
-                repositories.isEmpty() -> if (user.login.isNotEmpty())
-                    ErrorScreen(error = ErrorType.ApiError(404, "No repositories found for this user."))
+                profileState.hasLoaded && profileState.repositories.isEmpty() && profileState.error == null -> {
+                    ErrorScreen(error = ErrorType.UnknownError("No repositories found"))
+                }
+                profileState.error != null -> {
+                    ErrorScreen(error = profileState.error)
+                }
                 else -> {
                     RepoList(
-                        reposList = repositories,
+                        reposList = profileState.repositories,
                         headerHeight = headerHeight,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -285,7 +267,7 @@ fun CollapsingTopBar(user: UserDetail, headerHeight: Dp, offset: Float) {
                         .clip(CircleShape)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(user.name ?: "", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                Text(user.login, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
             }
         },
         actions = {

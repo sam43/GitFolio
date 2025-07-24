@@ -9,10 +9,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.domain.usecases.GetUserListUseCase
-import io.sam43.gitfolio.utils.ErrorType
-import io.sam43.gitfolio.utils.NetworkMonitor
-import io.sam43.gitfolio.utils.NetworkStatus
-import io.sam43.gitfolio.utils.Result
+import io.sam43.gitfolio.data.helper.ErrorType
+import io.sam43.gitfolio.data.helper.NetworkMonitor
+import io.sam43.gitfolio.data.helper.NetworkStatus
+import io.sam43.gitfolio.data.helper.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -66,7 +66,7 @@ class UserListViewModelTest {
         userListViewModel.fetchUsers()
 
         // Then
-        assertEquals(expectedUsers, userListViewModel.state.value.users)
+        assertEquals(expectedUsers, userListViewModel.state.value.items)
         assertEquals(false, userListViewModel.state.value.isLoading)
         assertEquals(null, userListViewModel.state.value.error)
     }
@@ -112,7 +112,7 @@ class UserListViewModelTest {
         userListViewModel.searchUsers(query)
 
         // Then
-        assertEquals(expectedUsers, userListViewModel.state.value.users)
+        assertEquals(expectedUsers, userListViewModel.state.value.items)
         assertEquals(false, userListViewModel.state.value.isLoading)
         assertEquals(null, userListViewModel.state.value.error)
     }

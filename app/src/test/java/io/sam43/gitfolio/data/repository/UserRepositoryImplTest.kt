@@ -3,9 +3,9 @@ package io.sam43.gitfolio.data.repository
 import io.mockk.*
 import io.sam43.gitfolio.data.remote.ApiService
 import io.sam43.gitfolio.domain.model.User
-import io.sam43.gitfolio.utils.AppException
-import io.sam43.gitfolio.utils.ErrorType
-import io.sam43.gitfolio.utils.Result
+import io.sam43.gitfolio.data.helper.AppException
+import io.sam43.gitfolio.data.helper.ErrorType
+import io.sam43.gitfolio.data.helper.Result
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Before

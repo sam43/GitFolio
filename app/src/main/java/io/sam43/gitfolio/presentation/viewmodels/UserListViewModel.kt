@@ -1,79 +1,53 @@
 package io.sam43.gitfolio.presentation.viewmodels
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.sam43.gitfolio.data.helper.ErrorType
+import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.domain.usecases.GetUserListUseCase
-import io.sam43.gitfolio.presentation.state.UserListState
+import io.sam43.gitfolio.presentation.state.ListUiState
+import io.sam43.gitfolio.presentation.state.updateWithListResult
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import io.sam43.gitfolio.utils.Result
-import io.sam43.gitfolio.utils.NetworkMonitor
-import kotlinx.coroutines.flow.collectLatest
 
 @HiltViewModel
 class UserListViewModel @Inject constructor(
-    private val useCase: GetUserListUseCase,
-    networkMonitor: NetworkMonitor
-) : ParentViewModel(networkMonitor) {
-    private val _state = MutableStateFlow(UserListState(isLoading = true))
-    val state: StateFlow<UserListState> = _state.asStateFlow()
+    private val useCase: GetUserListUseCase
+) : ViewModel() {
+    val state = MutableStateFlow(ListUiState<User>())
 
-    init {
-        monitorNetworkChanges(
-            onConnectedAction = ::fetchUsers,
-            onDisconnectedAction = {/* do nothing for now */}
-        )
-    }
+    init { fetchUsers() }
     
     fun fetchUsers() {
         viewModelScope.launch {
-            useCase().collectLatest { result ->
-                when (result) {
-                    is Result.Loading -> {
-                        _state.value = UserListState(isLoading = true)
-                    }
-                    is Result.Success -> {
-                        _state.value = UserListState(
-                            users = result.data,
-                            isLoading = false
-                        )
-                    }
-                    is Result.Error -> {
-                        _state.value = UserListState(
-                            error = result.errorType,
-                            isLoading = false
-                        )
+            state.update { it.copy(isLoading = true, error = null) }
+            try {
+                launch {
+                    useCase.invoke().collectLatest { result ->
+                        state.updateWithListResult(result)
                     }
                 }
+            } catch (e: Exception) {
+                state.update { ListUiState(error = ErrorType.UnknownError(e.message.toString())) }
             }
         }
     }
 
+    @Deprecated("Not used as the user item filtration has been handled locally")
     fun searchUsers(q: String) {
         viewModelScope.launch {
-            useCase.invoke(q).collectLatest { result ->
-                when (result) {
-                    is Result.Loading -> {
-                        _state.value = UserListState(isLoading = true)
-                    }
-
-                    is Result.Success -> {
-                        _state.value = UserListState(
-                            users = result.data,
-                            isLoading = false
-                        )
-                    }
-
-                    is Result.Error -> {
-                        _state.value = UserListState(
-                            error = result.errorType,
-                            isLoading = false
-                        )
+            try {
+                launch {
+                    useCase.invoke(q).collectLatest { result ->
+                        state.updateWithListResult(result)
                     }
                 }
+            } catch (e: Exception) {
+                state.update { ListUiState(error = ErrorType.UnknownError(e.message.toString())) }
             }
         }
     }

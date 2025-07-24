@@ -2,11 +2,21 @@ package io.sam43.gitfolio.presentation.state
 
 import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.model.UserDetail
-import io.sam43.gitfolio.utils.ErrorType
+import io.sam43.gitfolio.data.helper.ErrorType
 
 data class UserProfileState(
-    val repositories: List<Repo> = emptyList(),
-    val user: UserDetail? = null,
-    val isLoading: Boolean = false,
-    val error: ErrorType? = null
-)
+    val userState: DataUiState<UserDetail> = DataUiState(),
+    val repositoriesState: ListUiState<Repo> = ListUiState(),
+    val errorCombined: ErrorType? = null
+) {
+    // for easier access
+    val user: UserDetail? get() = userState.data
+    val repositories: List<Repo> get() = repositoriesState.items
+    val isLoading: Boolean get() = userState.isLoading || repositoriesState.isLoading
+    val hasLoaded: Boolean get() = user != null && repositories.isNotEmpty()
+    val error: ErrorType? get() = errorCombined
+}
+
+
+fun UserProfileState.hasErrorWithoutUser(): Boolean =
+    error != null && user == null
