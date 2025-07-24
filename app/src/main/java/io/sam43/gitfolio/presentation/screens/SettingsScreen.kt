@@ -13,7 +13,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,6 +25,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.sam43.gitfolio.presentation.viewmodels.ThemeViewModel
 import io.sam43.gitfolio.utils.appVersionName
 
@@ -33,7 +33,7 @@ import io.sam43.gitfolio.utils.appVersionName
 fun SettingsScreen(
     themeViewModel: ThemeViewModel = hiltViewModel()
 ) {
-    val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
+    val isDarkTheme by themeViewModel.isDarkTheme.collectAsStateWithLifecycle()
     var showAboutDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
