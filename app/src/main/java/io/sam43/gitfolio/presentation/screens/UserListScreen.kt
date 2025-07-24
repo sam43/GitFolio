@@ -20,8 +20,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import io.sam43.gitfolio.domain.model.User
 import io.sam43.gitfolio.presentation.common.AppNavigation
@@ -48,26 +49,29 @@ fun UserListScreen(
     navController: NavController,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    searchQuery: String? = "",
     viewModel: UserListViewModel = hiltViewModel()
 ) {
-    val state by viewModel.state.collectAsState()
-
+    val state by viewModel.state.collectAsStateWithLifecycle()
     when {
-        state.isLoading && state.items.isEmpty() -> CenteredCircularProgressIndicator()
-        state.error != null -> ErrorScreen(error = state.error ?: ErrorType.UnknownError())
-        else -> UserList(
-            listState = state,
+        state.isLoading -> CenteredCircularProgressIndicator()
+        !state.isLoading && state.users.isNotEmpty() -> UserList(
+            userListState = state,
             sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope
-        ) { user ->
-            val encodedAvatarUrl = URLEncoder.encode(user.avatarUrl, StandardCharsets.UTF_8.name())
-            val encodedDisplayName = URLEncoder.encode(user.login, StandardCharsets.UTF_8.name()) // Handle null name
-            AppNavigation.navigateTo(
-                navController = navController,
-                route = "${USER_PROFILE_SCREEN}/${user.login}?avatarUrl=$encodedAvatarUrl&displayName=$encodedDisplayName"
-            )
-        }
+            animatedVisibilityScope = animatedVisibilityScope,
+            searchQuery = searchQuery ?: "",
+        ) { user -> navController.navigateToProfile(user) }
+        else -> ErrorScreen(error = state.error ?: ErrorType.UnknownError())
     }
+}
+
+private fun NavController.navigateToProfile(user: User) {
+    val encodedAvatarUrl = URLEncoder.encode(user.avatarUrl, StandardCharsets.UTF_8.name())
+    val encodedDisplayName = URLEncoder.encode(user.login, StandardCharsets.UTF_8.name())
+    AppNavigation.navigateTo(
+        navController = this,
+        route = "${USER_PROFILE_SCREEN}/${user.login}?avatarUrl=$encodedAvatarUrl&displayName=$encodedDisplayName"
+    )
 }
 
 @Composable
@@ -75,10 +79,20 @@ fun UserList(
     listState: ListState<User>,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    searchQuery: String,
     onItemClick: (User) -> Unit = {}
 ) {
+    val filteredUsers = remember(userListState.users, searchQuery) {
+        if (searchQuery.isBlank()) {
+            userListState.users
+        } else {
+            userListState.users.filter { user ->
+                user.login.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
     LazyColumn {
-        items(listState.items, key = { user -> user.id }) { user ->
+        items(filteredUsers, key = { user -> user.login }) { user ->
             UserListItem(
                 user = user,
                 sharedTransitionScope = sharedTransitionScope,
@@ -133,8 +147,6 @@ fun UserListItem(
         }
     }
 }
-
-
 @Composable
 fun UserListItemPreview(user: User, onClick: () -> Unit = {}) {
     Row(

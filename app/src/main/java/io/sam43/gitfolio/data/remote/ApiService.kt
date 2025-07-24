@@ -9,16 +9,19 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
-    @GET("/users")
-    suspend fun getUsers(): Response<List<User>>
+    @GET("users")
+    suspend fun getUsers(
+        @Query("since") since: Int = 1,
+        @Query("per_page") perPage: Int = 50
+    ): Response<List<User>>
 
-    @GET("/search/users")
+    @GET("search/users")
     suspend fun searchUsers(@Query("q") query: String): Response<List<User>>
 
-    @GET("/users/{username}")
+    @GET("users/{username}")
     suspend fun getUser(@Path("username") username: String): Response<UserDetail>
 
-    @GET("/users/{username}/repos")
+    @GET("users/{username}/repos")
     suspend fun getUserRepos(
         @Path("username") username: String
     ): Response<List<Repo>>

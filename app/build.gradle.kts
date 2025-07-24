@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -10,6 +12,14 @@ android {
     namespace = "io.sam43.gitfolio"
     compileSdk = 36
 
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { input ->
+            localProperties.load(input)
+        }
+    }
+
     defaultConfig {
         applicationId = "io.sam43.gitfolio"
         minSdk = 28
@@ -18,6 +28,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField ("String", "GITHUB_API_TOKEN", "\"${localProperties.getProperty("GITHUB_API_TOKEN", "")}\"")
     }
 
     buildTypes {
@@ -49,6 +60,9 @@ android {
         compose = true
         buildConfig = true
     }
+    lint {
+        baseline = file("lint-baseline.xml")
+    }
 }
 
 dependencies {
@@ -73,8 +87,6 @@ dependencies {
     // Moshi
     implementation(libs.moshi)
     implementation(libs.moshi.adapters)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.junit.jupiter)
     ksp(libs.moshi.codegen)
     
     // Image loading

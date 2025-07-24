@@ -9,11 +9,11 @@ import javax.inject.Inject
 class GetUserListUseCase @Inject constructor(
     private val userRepository: UserRepository
 ) {
-    suspend operator fun invoke(query: String? = null): Flow<Result<List<User>>> {
+    operator fun invoke(query: String? = null): Flow<Result<List<User>>> {
         return if (query.isNullOrBlank()) {
             userRepository.getUsers()
         } else {
-            // todo:: filter it offline for better performance
+            // filter it offline for better performance, still keeoing this for future usecases
             userRepository.searchUsers(query)
         }
     }

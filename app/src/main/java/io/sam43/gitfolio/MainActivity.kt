@@ -5,7 +5,6 @@ package io.sam43.gitfolio
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -27,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -87,7 +86,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
-            val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
+            val isDarkTheme by themeViewModel.isDarkTheme.collectAsStateWithLifecycle()
 
             GitFolioTheme(darkTheme = isDarkTheme) {
                 val navController = rememberNavController()
@@ -186,17 +185,17 @@ fun LandingScreen(
             modifier = Modifier
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         )
-        UserListScreen(navController, sharedTransitionScope, animatedVisibilityScope)
+        UserListScreen(
+            navController = navController,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+            searchQuery = searchQuery
+        )
     }
 }
 
 @Composable
 fun AppMain(modifier: Modifier, navController: NavHostController, themeViewModel: ThemeViewModel) {
-    BackHandler(enabled = true) {
-        if (navController.previousBackStackEntry != null) {
-            navController.popBackStack()
-        }
-    }
     SharedTransitionLayout {
         NavHost(
             navController = navController,

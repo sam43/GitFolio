@@ -29,7 +29,7 @@ sealed class ErrorType {
         override fun toString(): String = "SearchQueryError"
     }
 
-    // Add ServerError for completeness (used in tests)
+    // HTTP 500-599 RANGE STATUS CODE RESULT
     data object ServerError : ErrorType() {
         override fun toString(): String = "ServerError"
     }
@@ -47,7 +47,7 @@ object ErrorHandler {
                     else -> ErrorType.ApiError(throwable.code(), throwable.message())
                 }
             }
-            is IOException -> ErrorType.NetworkError
+            is IOException -> ErrorType.UnknownError(throwable.message ?: UNKNOWN_ERROR_MESSAGE)
             else -> ErrorType.UnknownError(throwable.message ?: UNKNOWN_ERROR_MESSAGE)
         }
     }
