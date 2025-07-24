@@ -1,9 +1,11 @@
 @file:OptIn(ExperimentalSharedTransitionApi::class)
+
 package io.sam43.gitfolio.presentation.screens
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -22,10 +24,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -53,15 +57,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import io.sam43.gitfolio.data.helper.ErrorType
 import io.sam43.gitfolio.domain.model.Repo
 import io.sam43.gitfolio.domain.model.UserDetail
 import io.sam43.gitfolio.presentation.common.CenteredCircularProgressIndicator
 import io.sam43.gitfolio.presentation.common.ErrorScreen
 import io.sam43.gitfolio.presentation.common.LoadImageWith
-import io.sam43.gitfolio.presentation.viewmodels.UserProfileDetailsViewModel
-import io.sam43.gitfolio.data.helper.ErrorType
 import io.sam43.gitfolio.presentation.state.UserProfileState
 import io.sam43.gitfolio.presentation.state.hasErrorWithoutUser
+import io.sam43.gitfolio.presentation.viewmodels.UserProfileDetailsViewModel
 import io.sam43.gitfolio.utils.createPlaceholderUser
 import io.sam43.gitfolio.utils.toFormattedCountString
 
@@ -72,6 +77,7 @@ fun GithubProfileScreen(
     displayName: String,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    navController: NavController,
     viewModel: UserProfileDetailsViewModel = hiltViewModel()
 ) {
     LaunchedEffect(username) {
@@ -85,12 +91,16 @@ fun GithubProfileScreen(
         state.hasErrorWithoutUser() -> {
             ErrorScreen(error = state.error ?: ErrorType.UnknownError())
         }
+
         else -> {
             UserProfileView(
                 user = displayUser,
                 profileState = state,
                 sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope
+                animatedVisibilityScope = animatedVisibilityScope,
+                onBackClick = {
+                    navController.popBackStack()
+                }
             )
         }
     }
@@ -101,7 +111,8 @@ fun UserProfileView(
     user: UserDetail,
     profileState: UserProfileState,
     sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    onBackClick: () -> Unit
 ) {
     val headerHeight = 280.dp
 
@@ -167,7 +178,8 @@ fun UserProfileView(
             CollapsingTopBar(
                 user = user,
                 headerHeight = headerHeight,
-                offset = headerOffsetHeightPx.floatValue
+                offset = headerOffsetHeightPx.floatValue,
+                onBackClick = onBackClick
             )
         }
     }
@@ -195,61 +207,68 @@ fun CollapsingToolbar(
     animatedVisibilityScope: AnimatedVisibilityScope,
     modifier: Modifier = Modifier
 ) {
-    val collapseFraction = (offset / -with(LocalDensity.current) { headerHeight.toPx() }).coerceIn(0f, 1f)
+    val collapseFraction =
+        (offset / -with(LocalDensity.current) { headerHeight.toPx() }).coerceIn(0f, 1f)
     val imageSize = (120 * (1 - collapseFraction * 0.5f)).dp
 
-    Column(
-        modifier = modifier.background(MaterialTheme.colorScheme.surface),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Box(
+        modifier = modifier.background(MaterialTheme.colorScheme.surface)
     ) {
-        with(sharedTransitionScope) {
-            user.avatarUrl.LoadImageWith(
-                modifier = Modifier
-                    .size(imageSize)
-                    .clip(RectangleShape)
-                    .sharedElement(
-                        sharedContentState = rememberSharedContentState(key = "user-avatar-${user.login}"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    )
-                    .graphicsLayer {
-                        translationY = offset * 0.4f
-                    }
-            )
+        // Main content centered
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            with(sharedTransitionScope) {
+                user.avatarUrl.LoadImageWith(
+                    modifier = Modifier
+                        .size(imageSize)
+                        .clip(RectangleShape)
+                        .sharedElement(
+                            sharedContentState = rememberSharedContentState(key = "user-avatar-${user.login}"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        )
+                        .graphicsLayer {
+                            translationY = offset * 0.4f
+                        }
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    "@${user.login}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .sharedElement(
+                            sharedContentState = rememberSharedContentState(key = "username-${user.login}"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        )
+                        .graphicsLayer {
+                            alpha = 1f - collapseFraction * 2
+                        }
+                )
+                Text(
+                    user.name ?: "---",
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.graphicsLayer { alpha = 1f - collapseFraction * 2 }
+                )
+            }
             Spacer(Modifier.height(16.dp))
-            Text("@${user.login}",
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .sharedElement(
-                        sharedContentState = rememberSharedContentState(key = "username-${user.login}"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    )
-                    .graphicsLayer {
-                        alpha = 1f - collapseFraction * 2
-                    }
-            )
-            Text(
-                user.name ?: "---",
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            FollowerInfo(
+                followers = user.followers,
+                following = user.following,
                 modifier = Modifier.graphicsLayer { alpha = 1f - collapseFraction * 2 }
             )
         }
-        Spacer(Modifier.height(16.dp))
-        FollowerInfo(
-            followers = user.followers,
-            following = user.following,
-            modifier = Modifier.graphicsLayer { alpha = 1f - collapseFraction * 2 }
-        )
     }
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CollapsingTopBar(user: UserDetail, headerHeight: Dp, offset: Float) {
+fun CollapsingTopBar(user: UserDetail, headerHeight: Dp, offset: Float, onBackClick: () -> Unit) {
     val headerHeightPx = with(LocalDensity.current) { headerHeight.toPx() }
     val collapseThreshold = headerHeightPx * 0.7f
 
@@ -258,6 +277,12 @@ fun CollapsingTopBar(user: UserDetail, headerHeight: Dp, offset: Float) {
         label = "Toolbar Alpha"
     )
 
+    val iconTint by animateColorAsState(
+        targetValue = if (-offset > collapseThreshold) MaterialTheme.colorScheme.onSurface else Color.White,
+        label = "Icon Tint"
+    )
+
+
     TopAppBar(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -265,25 +290,45 @@ fun CollapsingTopBar(user: UserDetail, headerHeight: Dp, offset: Float) {
                     modifier = Modifier
                         .size(32.dp)
                         .clip(CircleShape)
+                        .graphicsLayer { alpha = toolbarAlpha }
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(user.login, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                Text(
+                    user.login,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.graphicsLayer { alpha = toolbarAlpha }
+                )
+            }
+        },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    modifier = Modifier.size(32.dp),
+                    contentDescription = "Back",
+                    tint = iconTint
+                )
             }
         },
         actions = {
             Text(
-                user.followers.toFollowersString().plus(" • ").plus(user.following.toFollowingsString()),
+                user.followers.toFollowersString().plus(" • ")
+                    .plus(user.following.toFollowingsString()),
                 fontSize = 14.sp,
-                modifier = Modifier.padding(end = 4.dp)
+                modifier = Modifier
+                    .padding(end = 4.dp)
+                    .graphicsLayer { alpha = toolbarAlpha }
             )
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = toolbarAlpha),
             titleContentColor = MaterialTheme.colorScheme.onSurface,
         ),
-        modifier = Modifier.graphicsLayer { alpha = toolbarAlpha }
+        modifier = Modifier.fillMaxWidth()
     )
 }
+
 @Composable
 fun RepoListItem(repo: Repo) {
     Column(
@@ -295,11 +340,22 @@ fun RepoListItem(repo: Repo) {
         Spacer(Modifier.height(4.dp))
         Text(repo.description ?: "", color = Color.Gray, fontSize = 16.sp)
         Spacer(Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Star, contentDescription = "Stars", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(
+                    Icons.Rounded.Star,
+                    contentDescription = "Stars",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
                 Spacer(Modifier.width(4.dp))
-                Text(repo.stargazersCount.toString(), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                Text(
+                    repo.stargazersCount.toString(),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -340,13 +396,22 @@ private fun getLanguageColorBy(language: String?): Color =
         "Haskell" -> Color(0xFF5E5086)
         else -> Color(0xFFD3D3D3)
     }
+
 @Composable
 fun FollowerInfo(followers: Int, following: Int, modifier: Modifier = Modifier) {
     Row(modifier = modifier) {
-        Text(followers.toFollowersString(), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+        Text(
+            followers.toFollowersString(),
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.SemiBold
+        )
         Text(" followers • ", color = MaterialTheme.colorScheme.onSurface)
         Spacer(Modifier.width(8.dp))
-        Text(following.toFollowingsString(), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+        Text(
+            following.toFollowingsString(),
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.SemiBold
+        )
         Text(" following", color = Color.Gray)
     }
 }

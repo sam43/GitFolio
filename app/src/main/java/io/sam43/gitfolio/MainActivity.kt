@@ -231,7 +231,8 @@ fun AppMain(modifier: Modifier, navController: NavHostController, themeViewModel
                     avatarUrl = avatarUrl,
                     displayName = displayName,
                     sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedVisibilityScope = this
+                    animatedVisibilityScope = this,
+                    navController = navController
                 )
             }
             composable(SETTINGS_SCREEN) {
